@@ -1,0 +1,12 @@
+{
+  "name": "lifeos-waitlist",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev:public": "npm run dev --workspace=apps/public",
+    "dev:admin": "npm run dev --workspace=apps/admin",
+    "build:public": "npm run build --workspace=apps/public",
+    "build:admin": "npm run build --workspace=apps/admin",
+    "build": "npm run build:public && npm run build:admin"
+  }
+}
