@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from './lib/supabase'
 import { LayoutDashboard, Users, PenTool, BarChart2, Settings, LogOut, Lock, Download, Trash2, CheckCircle } from 'lucide-react'
 
 // Basic layout and routing
@@ -147,7 +147,7 @@ function WaitlistTab() {
   const [users, setUsers] = useState<any[]>([])
   
   useEffect(() => {
-    supabase.from('waitlist').select('*').order('created_at', { ascending: false }).limit(50).then(res => {
+    supabase.from('waitlist').select('*').order('created_at', { ascending: false }).limit(50).then((res: any) => {
       if (res.data) setUsers(res.data)
     })
   }, [])
