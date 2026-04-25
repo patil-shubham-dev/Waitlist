@@ -1,12 +1,35 @@
 import type { Tab } from './Dashboard'
+import { 
+  Users, 
+  ShieldAlert, 
+  Rss, 
+  Globe, 
+  Cpu, 
+  Layout, 
+  UserPlus, 
+  Activity, 
+  Terminal, 
+  Database,
+  LogOut, 
+  Sparkles 
+} from 'lucide-react'
 
-const NAV: { id: Tab; label: string; group?: string }[] = [
-  { id: 'overview',    label: 'Overview',    group: 'Main' },
-  { id: 'waitlist',    label: 'Waitlist',    group: 'Main' },
-  { id: 'suggestions', label: 'Suggestions', group: 'Main' },
-  { id: 'visits',      label: 'Visits',      group: 'Main' },
-  { id: 'timeline',    label: 'Timeline',    group: 'Content' },
-  { id: 'content',     label: 'Site Content', group: 'Content' },
+const NAV: { id: Tab; label: string; group: string; icon: any }[] = [
+  // IDENTITIES & GOVERNANCE
+  { id: 'users',       label: 'USER REGISTRY',    group: 'GOVERNANCE', icon: Users },
+  { id: 'proofs',      label: 'PROOF VALIDATION', group: 'GOVERNANCE', icon: ShieldAlert },
+  { id: 'feed',        label: 'FEED CONTROL',     group: 'GOVERNANCE', icon: Rss },
+  { id: 'communities', label: 'COMMUNITIES',      group: 'GOVERNANCE', icon: Globe },
+  
+  // SYSTEM ARCHITECTURE
+  { id: 'ai-control',  label: 'AI ALGORITHMS',    group: 'SYSTEM',     icon: Cpu },
+  { id: 'cms',         label: 'PROTOCOL CMS',     group: 'SYSTEM',     icon: Layout },
+  { id: 'waitlist',    label: 'ACCESS QUEUE',     group: 'SYSTEM',     icon: UserPlus },
+  
+  // INTELLIGENCE & TRACKING
+  { id: 'telemetry',   label: 'TELEMETRY',        group: 'INTELLIGENCE',icon: Activity },
+  { id: 'assistant',   label: 'ORACLE ASSISTANT', group: 'INTELLIGENCE',icon: Terminal },
+  { id: 'audit',       label: 'AUDIT LOGS',       group: 'INTELLIGENCE',icon: Database },
 ]
 
 interface Props {
@@ -16,62 +39,46 @@ interface Props {
 }
 
 export default function Sidebar({ activeTab, setTab, onLogout }: Props) {
-  const groups = ['Main', 'Content']
+  const groups = ['GOVERNANCE', 'SYSTEM', 'INTELLIGENCE']
 
   return (
-    <aside style={{
-      width: 200, position: 'fixed', top: 0, left: 0, bottom: 0,
-      background: 'var(--bg)',
-      borderRight: '1px solid var(--border)',
-      display: 'flex', flexDirection: 'column',
-    }}>
-      {/* Logo */}
-      <div style={{
-        padding: '18px 18px 14px',
-        borderBottom: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', gap: 9,
-      }}>
-        <img src="/assets/logo-mark.svg" alt="LifeOS" style={{ height: 22 }} />
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.2px' }}>LifeOS</div>
-          <div style={{ fontSize: 9, color: 'var(--text-faint)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Admin</div>
+    <aside className="sidebar" style={{ overflowY: 'auto' }}>
+      <div style={{ padding: '0 1rem 2rem', borderBottom: '1px solid var(--border)' }}>
+        <div className="logo">
+          <Sparkles className="accent-gradient" size={24} />
+          <span style={{ fontSize: '1.2rem', fontWeight: 800 }}>ORACLE</span>
+        </div>
+        <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', letterSpacing: '0.3em', marginTop: '4px' }}>
+          GLOBAL CONTROL LAYER
         </div>
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px 10px', overflowY: 'auto' }}>
-        {groups.map((group) => (
-          <div key={group} style={{ marginBottom: 4 }}>
-            <p style={{
-              fontSize: 9, color: 'var(--text-faint)',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              padding: '10px 10px 4px',
-            }}>
-              {group}
-            </p>
-            {NAV.filter((n) => n.group === group).map((item) => {
+      <nav style={{ flex: 1, padding: '2rem 0' }}>
+        {groups.map(group => (
+          <div key={group} style={{ marginBottom: '2rem' }}>
+            <p className="stat-label" style={{ paddingLeft: '1rem', marginBottom: '1rem' }}>{group}</p>
+            {NAV.filter(n => n.group === group).map(item => {
               const active = activeTab === item.id
+              const Icon = item.icon
               return (
                 <button
                   key={item.id}
                   onClick={() => setTab(item.id)}
-                  style={{
-                    width: '100%', textAlign: 'left',
-                    padding: '8px 12px', borderRadius: 7,
-                    border: 'none',
-                    background: active ? 'var(--bg-subtle)' : 'transparent',
-                    color: active ? 'var(--text)' : 'var(--text-muted)',
-                    fontSize: 13, fontWeight: active ? 500 : 400,
-                    cursor: 'pointer', marginBottom: 1,
-                    transition: 'background 0.12s, color 0.12s',
-                    display: 'flex', alignItems: 'center',
-                    borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-                    paddingLeft: active ? 10 : 12,
+                  className={`btn-hud ${active ? 'btn-hud-primary' : ''}`}
+                  style={{ 
+                    width: '100%', 
+                    textAlign: 'left', 
+                    border: 'none', 
+                    borderRadius: '0',
+                    borderLeft: active ? '2px solid var(--primary)' : '2px solid transparent',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.75rem', 
+                    padding: '0.75rem 1rem',
                   }}
-                  onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--text)' }}
-                  onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-muted)' }}
                 >
-                  {item.label}
+                  <Icon size={16} />
+                  <span>{item.label}</span>
                 </button>
               )
             })}
@@ -79,21 +86,14 @@ export default function Sidebar({ activeTab, setTab, onLogout }: Props) {
         ))}
       </nav>
 
-      {/* Sign out */}
-      <div style={{ padding: '10px', borderTop: '1px solid var(--border)' }}>
-        <button
-          onClick={onLogout}
-          style={{
-            width: '100%', textAlign: 'left',
-            padding: '8px 12px', borderRadius: 7,
-            background: 'transparent', border: 'none',
-            color: 'var(--text-faint)', fontSize: 12, cursor: 'pointer',
-            transition: 'color 0.12s',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = '#f87171')}
-          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
+      <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+        <button 
+          onClick={onLogout} 
+          className="btn-hud" 
+          style={{ width: '100%', color: 'var(--critical)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}
         >
-          Sign out
+          <LogOut size={16} />
+          TERMINATE LINK
         </button>
       </div>
     </aside>

@@ -1,0 +1,205 @@
+/* ─── Oracle HUD Design System v1.0 ─── */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg: #050505;
+  --panel: #0A0A0C;
+  --header: #0F0F12;
+  
+  --primary: #FF5A1F;
+  --primary-glow: rgba(255, 90, 31, 0.2);
+  --primary-muted: rgba(255, 90, 31, 0.05);
+  
+  --safe: #34d399;
+  --warning: #fbbf24;
+  --critical: #f87171;
+  
+  --border: rgba(255, 255, 255, 0.04);
+  --border-bright: rgba(255, 255, 255, 0.08);
+  
+  --text: #E2E2E2;
+  --text-muted: #66666E;
+  --text-dim: #3F3F46;
+  
+  --font-main: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --radius: 8px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  overflow-x: hidden;
+  background-image: 
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ─── HUD Layout ─── */
+.hud-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background: var(--panel);
+  border-right: 1px solid var(--border-bright);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem;
+}
+
+.main-view {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ─── Components ─── */
+.oracle-card {
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.oracle-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--primary);
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.oracle-card:hover::before {
+  opacity: 1;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ─── Tables ─── */
+.oracle-table-container {
+  margin-top: 2rem;
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  background: var(--header);
+  border-bottom: 1px solid var(--border-bright);
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+tr:hover td {
+  background: var(--primary-muted);
+}
+
+/* ─── Buttons ─── */
+.btn-hud {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-hud-primary {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-muted);
+}
+
+.btn-hud:hover {
+  background: var(--border-bright);
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+/* ─── Login ─── */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.login-box {
+  width: 400px;
+  padding: 3rem;
+  background: var(--panel);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.input-hud {
+  width: 100%;
+  background: #000;
+  border: 1px solid var(--border-bright);
+  padding: 1rem;
+  color: var(--primary);
+  font-family: var(--font-mono);
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+}
+
+.input-hud:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+}

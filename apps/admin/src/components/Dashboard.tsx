@@ -1,27 +1,48 @@
 import { useState } from 'react'
 import Sidebar from './Sidebar'
-import Overview from './tabs/Overview'
-import WaitlistTab from './tabs/WaitlistTab'
-import SuggestionsTab from './tabs/SuggestionsTab'
-import VisitsTab from './tabs/VisitsTab'
-import TimelineTab from './tabs/TimelineTab'
-import ContentTab from './tabs/ContentTab'
 
-export type Tab = 'overview' | 'waitlist' | 'suggestions' | 'visits' | 'timeline' | 'content'
+// Tabs
+import WaitlistTab from './tabs/WaitlistTab'
+import UsersTab from './tabs/UsersTab'
+import ProofsTab from './tabs/ProofsTab'
+import FeedTab from './tabs/FeedTab'
+import CommunitiesTab from './tabs/CommunitiesTab'
+import AiControlTab from './tabs/AiControlTab'
+import CmsTab from './tabs/CmsTab'
+import TelemetryTab from './tabs/TelemetryTab'
+import AssistantTab from './tabs/AssistantTab'
+import AuditTab from './tabs/AuditTab'
+
+export type Tab = 
+  | 'users' 
+  | 'proofs' 
+  | 'feed' 
+  | 'communities' 
+  | 'ai-control' 
+  | 'cms' 
+  | 'waitlist' 
+  | 'telemetry' 
+  | 'assistant' 
+  | 'audit'
 
 interface Props { onLogout: () => void }
 
 export default function Dashboard({ onLogout }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [activeTab, setActiveTab] = useState<Tab>('telemetry')
 
   const renderTab = () => {
     switch (activeTab) {
-      case 'overview':    return <Overview setTab={setActiveTab} />
+      case 'users':       return <UsersTab />
+      case 'proofs':      return <ProofsTab />
+      case 'feed':        return <FeedTab />
+      case 'communities': return <CommunitiesTab />
+      case 'ai-control':  return <AiControlTab />
+      case 'cms':         return <CmsTab />
       case 'waitlist':    return <WaitlistTab />
-      case 'suggestions': return <SuggestionsTab />
-      case 'visits':      return <VisitsTab />
-      case 'timeline':    return <TimelineTab />
-      case 'content':     return <ContentTab />
+      case 'telemetry':   return <TelemetryTab />
+      case 'assistant':   return <AssistantTab />
+      case 'audit':       return <AuditTab />
+      default:            return <div className="stat-label">MODULE OFFLINE</div>
     }
   }
 

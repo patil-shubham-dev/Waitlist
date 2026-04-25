@@ -15,14 +15,14 @@ export default function App() {
   }, [])
 
   const handleLogin = () => {
-    sessionStorage.setItem(SESSION_KEY, 'true')
     setAuthed(true)
   }
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY)
+  const handleLogout = async () => {
+    // Clear cookie via API if needed or just clear local state for now
     setAuthed(false)
   }
+
 
   if (checking) {
     return (

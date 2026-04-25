@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/admin7276/(.*)",
+      "destination": "/admin7276/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+
