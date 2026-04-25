@@ -8,10 +8,16 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/admin7276')) {
     const session = request.cookies.get('admin_session');
 
-    // Allow the login page itself (root of /admin7276)
-    if (pathname === '/admin7276' || pathname === '/admin7276/' || pathname === '/admin7276/index.html') {
+    // Allow the login page and its assets
+    if (
+      pathname === '/admin7276' || 
+      pathname === '/admin7276/' || 
+      pathname === '/admin7276/index.html' ||
+      pathname.startsWith('/admin7276/assets/')
+    ) {
       return NextResponse.next();
     }
+
 
     // Require session for anything else in /admin7276/
     if (!session || session.value !== 'true') {
