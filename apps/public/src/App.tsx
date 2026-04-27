@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  Facebook,
   Flame,
+  Instagram,
+  Mail,
   Menu,
+  Heart,
+  MessageCircle,
   MessageSquareText,
   ShieldCheck,
   Sparkles,
@@ -16,7 +22,7 @@ import { supabase, type Suggestion } from './lib/supabase';
 import { useVisitTracker } from './hooks/useVisitTracker';
 
 const NAV_ITEMS = [
-  { id: 'problem', label: 'Why LifeOS' },
+  { id: 'why', label: 'Why LifeOS' },
   { id: 'loop', label: 'Core Loop' },
   { id: 'roadmap', label: 'Roadmap' },
   { id: 'questions', label: 'Questions' },
@@ -46,7 +52,7 @@ const PRODUCT_COPY = {
   ctaBody:
     'Early users help shape the execution system, the proof loop, and the social layer before LifeOS opens publicly.',
   ctaTrust: 'No spam. Only product updates.',
-  footer: 'Built for people who want to complete real work, feel progress, and come back tomorrow.',
+  footer: 'Built for people who take action, prove progress, and return stronger.',
 };
 
 const PROBLEM_CARDS = [
@@ -123,7 +129,23 @@ const ROADMAP_CARDS = [
 const VISITOR_COOKIE = 'lifeos_visitor';
 
 function sectionScroll(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (id === 'top') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  
+  const target = document.getElementById(id);
+  const navbar = document.querySelector('.navbar-shell');
+
+  if (target) {
+    const navbarHeight = navbar instanceof HTMLElement ? navbar.offsetHeight : 72;
+    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - (navbarHeight - 4);
+
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth'
+    });
+  }
 }
 
 function writeVisitorCookie(value: { name: string; email: string; role?: string }) {
@@ -208,44 +230,87 @@ function Navbar({
           <button className="button button-primary button-small" onClick={() => sectionScroll('waitlist')}>
             {ctaLabel}
           </button>
-          <button className="mobile-nav-toggle" aria-label="Open navigation" onClick={() => setOpen((current) => !current)}>
-            {open ? <X size={18} /> : <Menu size={18} />}
+          <button className={`menu-button ${open ? 'active' : ''}`} aria-label="Toggle navigation" onClick={() => setOpen((current) => !current)}>
+            {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </nav>
 
-      <div className={`mobile-nav ${open ? 'open' : ''}`}>
-        {NAV_ITEMS.map((item) => (
+      <div className={`mobile-backdrop ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
+
+      <aside className={`mobile-menu ${open ? 'open' : ''}`}>
+        <div className="mobile-menu-header">
+           <img className="brand-mark" src="/assets/logo-mark.jpg" alt="LifeOS" />
+           <button className="close-button" onClick={() => setOpen(false)}>
+             <X size={24} />
+           </button>
+        </div>
+
+        <div className="mobile-menu-links">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              className="mobile-menu-link"
+              onClick={() => {
+                setOpen(false);
+                sectionScroll(item.id);
+              }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mobile-menu-footer">
           <button
-            key={item.id}
-            className="mobile-nav-link"
+            className="button button-primary button-full"
             onClick={() => {
               setOpen(false);
-              sectionScroll(item.id);
+              sectionScroll('waitlist');
             }}
           >
-            {item.label}
+            {ctaLabel}
           </button>
-        ))}
-        <button
-          className="button button-primary"
-          onClick={() => {
-            setOpen(false);
-            sectionScroll('waitlist');
-          }}
-        >
-          {ctaLabel}
-        </button>
-      </div>
+        </div>
+      </aside>
     </header>
   );
 }
 
-export default function App() {
+function App() {
   useVisitTracker();
 
   const [waitlistCount, setWaitlistCount] = useState(0);
   const [questions, setQuestions] = useState<Suggestion[]>([]);
+  const [isRoleOpen, setIsRoleOpen] = useState(false);
+
+  const ROLES = [
+    { value: 'student', label: 'Student' },
+    { value: 'founder', label: 'Founder' },
+    { value: 'creator', label: 'Creator' },
+    { value: 'operator', label: 'Operator' },
+    { value: 'professional', label: 'Professional' },
+    { value: 'other', label: 'Other' },
+  ];
+  
+  useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+      
+      if (anchor && anchor.hash && anchor.origin === window.location.origin) {
+        const id = anchor.hash.replace('#', '');
+        if (id) {
+          e.preventDefault();
+          sectionScroll(id);
+        }
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
+  }, []);
+
   const [activeSection, setActiveSection] = useState('problem');
   const [navCompact, setNavCompact] = useState(false);
 
@@ -387,8 +452,10 @@ export default function App() {
                 <Sparkles size={14} />
                 {PRODUCT_COPY.heroBadge}
               </span>
-              <h1>{PRODUCT_COPY.heroTitle}</h1>
-              <p>{PRODUCT_COPY.heroBody}</p>
+              <h1 className="hero-title">
+                LifeOS turns action into visible progress.
+              </h1>
+              <p className="hero-subtext">{PRODUCT_COPY.heroBody}</p>
               <div className="hero-actions">
                 <button className="button button-primary" onClick={() => sectionScroll('waitlist')}>
                   {PRODUCT_COPY.heroPrimary}
@@ -421,7 +488,7 @@ export default function App() {
           </div>
         </section>
 
-        <section id="problem" data-section="problem" className="page-section">
+        <section id="why" data-section="why" className="page-section">
           <div className="section-header">
             <span className="section-label">Problem</span>
             <h2>{PRODUCT_COPY.problemTitle}</h2>
@@ -447,10 +514,10 @@ export default function App() {
             <h2>{PRODUCT_COPY.loopTitle}</h2>
             <p>{PRODUCT_COPY.loopBody}</p>
           </div>
-          <div className="card-grid card-grid-4">
+          <div className="card-grid card-grid-4 coreloop-grid">
             {LOOP_CARDS.map((item) => (
               <article className="product-card loop-card" key={item.step}>
-                <span className="step-chip">{item.step}</span>
+                <span className="step-number">{item.step}</span>
                 <h3>{item.title}</h3>
                 <p>{item.body}</p>
               </article>
@@ -464,9 +531,10 @@ export default function App() {
             <h2>{PRODUCT_COPY.roadmapTitle}</h2>
             <p>{PRODUCT_COPY.roadmapBody}</p>
           </div>
-          <div className="card-grid card-grid-2">
-            {ROADMAP_CARDS.map((item) => (
+          <div className="card-grid card-grid-2 roadmap-grid">
+            {ROADMAP_CARDS.map((item, index) => (
               <article className="product-card roadmap-card" key={item.title}>
+                <span className="step-number">0{index + 1}</span>
                 <div className="card-topline">
                   <span className={`status-chip status-${item.status.toLowerCase()}`}>{item.status}</span>
                   <span className="status-meaning">
@@ -526,6 +594,22 @@ export default function App() {
                 ) : (
                   <p>Visitors will see the clearest questions and product replies without leaving the landing page.</p>
                 )}
+
+                <div className="mobile-social-actions">
+                  <div className="question-actions">
+                    <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
+                      <Heart size={18} />
+                      <span>Like</span>
+                    </button>
+                    <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
+                      <MessageCircle size={18} />
+                      <span>Comment</span>
+                    </button>
+                  </div>
+                  <div className="comment-input-trigger" onClick={() => sectionScroll('waitlist')}>
+                    <input type="text" placeholder="Add a comment..." readOnly />
+                  </div>
+                </div>
               </article>
 
               <div className="thread-stack">
@@ -533,6 +617,20 @@ export default function App() {
                   <article className="product-card thread-card" key={question.id}>
                     <h3>{question.title || 'Question'}</h3>
                     <p>{question.content}</p>
+                    
+                    <div className="mobile-social-actions">
+                      <div className="question-actions">
+                        <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
+                          <Heart size={16} />
+                        </button>
+                        <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
+                          <MessageCircle size={16} />
+                        </button>
+                      </div>
+                      <div className="comment-input-trigger" onClick={() => sectionScroll('waitlist')}>
+                        <input type="text" placeholder="Add a comment..." readOnly />
+                      </div>
+                    </div>
                   </article>
                 ))}
               </div>
@@ -594,61 +692,113 @@ export default function App() {
         </section>
 
         <section id="waitlist" className="page-section">
-          <div className="cta-panel">
-            <div className="cta-copy">
+          <div className="waitlist-layout">
+            <div className="waitlist-content">
               <span className="section-label">Waitlist</span>
-              <h2>{PRODUCT_COPY.ctaTitle}</h2>
-              <p>{PRODUCT_COPY.ctaBody}</p>
-              <span className="trust-line">{PRODUCT_COPY.ctaTrust}</span>
+              <h2 className="waitlist-title">{PRODUCT_COPY.ctaTitle}</h2>
+              <p className="waitlist-desc">{PRODUCT_COPY.ctaBody}</p>
+              <p className="waitlist-note">{PRODUCT_COPY.ctaTrust}</p>
             </div>
 
-            <form className="waitlist-form" onSubmit={handleJoin}>
-              <label className="field">
-                <span>Name</span>
-                <input
-                  value={joinForm.name}
-                  onChange={(event) => setJoinForm((current) => ({ ...current, name: event.target.value }))}
-                  placeholder="Your name"
-                />
-              </label>
-              <label className="field">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={joinForm.email}
-                  onChange={(event) => setJoinForm((current) => ({ ...current, email: event.target.value }))}
-                  placeholder="you@example.com"
-                  required
-                />
-              </label>
-              <label className="field">
-                <span>Role</span>
-                <select
-                  value={joinForm.role}
-                  onChange={(event) => setJoinForm((current) => ({ ...current, role: event.target.value }))}
-                >
-                  <option value="student">Student</option>
-                  <option value="founder">Founder</option>
-                  <option value="creator">Creator</option>
-                  <option value="operator">Operator</option>
-                  <option value="professional">Professional</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
-              <button className="button button-primary button-full" type="submit" disabled={joinState === 'loading'}>
-                {joinState === 'loading' ? 'Joining...' : PRODUCT_COPY.navCta}
-              </button>
-              {joinState === 'success' && <p className="feedback success">You are in. This browser is now ready for questions too.</p>}
-              {joinState === 'error' && <p className="feedback error">That signup failed. If you already joined, try another email.</p>}
-            </form>
+            <div className="waitlist-form">
+              <form className="form-container" onSubmit={handleJoin}>
+                <label className="field">
+                  <span>Name</span>
+                  <input
+                    value={joinForm.name}
+                    onChange={(event) => setJoinForm((current) => ({ ...current, name: event.target.value }))}
+                    placeholder="Your name"
+                  />
+                </label>
+                <label className="field">
+                  <span>Email</span>
+                  <input
+                    type="email"
+                    value={joinForm.email}
+                    onChange={(event) => setJoinForm((current) => ({ ...current, email: event.target.value }))}
+                    placeholder="you@example.com"
+                    required
+                  />
+                </label>
+                <div className="field custom-select">
+                  <span>Role</span>
+                  <div className="custom-select-wrapper">
+                    <button
+                      type="button"
+                      className={`custom-select-trigger ${isRoleOpen ? 'open' : ''}`}
+                      onClick={() => setIsRoleOpen((prev) => !prev)}
+                    >
+                      <span className="selected-value">
+                        {ROLES.find(r => r.value === joinForm.role)?.label || 'Select your role'}
+                      </span>
+                      <ChevronDown size={16} className="trigger-arrow" />
+                    </button>
+
+                    {/* Unified Dropdown for Desktop & Mobile */}
+                    <div className={`custom-select-dropdown ${isRoleOpen ? 'show' : ''}`}>
+                      {ROLES.map((role) => (
+                        <button
+                          key={role.value}
+                          type="button"
+                          className={`dropdown-option ${joinForm.role === role.value ? 'selected' : ''}`}
+                          onClick={() => {
+                            setJoinForm(prev => ({ ...prev, role: role.value }));
+                            setIsRoleOpen(false);
+                          }}
+                        >
+                          {role.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div 
+                      className={`custom-select-overlay ${isRoleOpen ? 'show' : ''}`} 
+                      onClick={() => setIsRoleOpen(false)} 
+                    />
+                  </div>
+                </div>
+                <button className="button button-primary button-full" type="submit" disabled={joinState === 'loading'}>
+                  {joinState === 'loading' ? 'Joining...' : PRODUCT_COPY.navCta}
+                </button>
+                {joinState === 'success' && <p className="feedback success">You are in. This browser is now ready for questions too.</p>}
+                {joinState === 'error' && <p className="feedback error">That signup failed. If you already joined, try another email.</p>}
+              </form>
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="page-footer">
-        <img className="footer-wordmark" src="/assets/logo-wordmark.svg" alt="LifeOS" />
-        <p>{PRODUCT_COPY.footer}</p>
+      <footer className="footer">
+        <div className="footer-left">
+          <div className="footer-brand">
+            <img src="/assets/logo-mark.jpg" alt="LifeOS" className="footer-logo" />
+            <img src="/assets/logo-wordmark.svg" alt="LifeOS" className="footer-wordmark-svg" />
+          </div>
+        </div>
+
+        <div className="footer-right">
+          <p className="footer-desc">
+            {PRODUCT_COPY.footer}
+          </p>
+
+          <div className="footer-icons">
+            <a href="https://instagram.com/lifeossocial" target="_blank" rel="noreferrer" title="Instagram">
+              <Instagram size={20} />
+            </a>
+            <a href="https://www.facebook.com/share/18KES85u5V/" target="_blank" rel="noreferrer" title="Facebook">
+              <Facebook size={20} />
+            </a>
+            <a href="mailto:lifeossocial01@gmail.com" title="Email">
+              <Mail size={20} />
+            </a>
+          </div>
+
+          <div className="footer-links">
+            Privacy Policy • Terms • Contact
+          </div>
+        </div>
       </footer>
     </div>
   );
 }
+
+export default App;

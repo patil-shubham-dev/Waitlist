@@ -18,8 +18,14 @@ export default function App() {
       // 2. Check the Vercel /api/auth cookie session (production)
       try {
         const response = await fetch('/api/auth', { credentials: 'include' });
-        const data = await response.json();
-        setAuthed(Boolean(data.authenticated));
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          setAuthed(Boolean(data.authenticated));
+        } else {
+          // If we get HTML or something else, the API isn't ready/deployed
+          setAuthed(false);
+        }
       } catch {
         // API not available (local dev without Vercel) — not authed yet
         setAuthed(false);

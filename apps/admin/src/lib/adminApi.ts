@@ -67,6 +67,12 @@ export type OverviewResponse = {
 };
 
 async function parseResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await response.text();
+    throw new Error(`Expected JSON response, but received ${contentType || 'plain text'}: ${text.slice(0, 50)}...`);
+  }
+  
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || 'Request failed.');

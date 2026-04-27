@@ -25,7 +25,7 @@ export default function Sidebar({
   return (
     <aside className="sidebar-shell">
       <div className="sidebar-brand">
-        <img src="/assets/logo-mark.jpg" alt="LifeOS" />
+        <img src="assets/logo-mark.jpg" alt="LifeOS" />
         <div>
           <strong>LifeOS</strong>
           <span>Admin Panel</span>
