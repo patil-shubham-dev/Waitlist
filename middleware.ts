@@ -1,5 +1,6 @@
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { next } from '@vercel/edge';
+import type { NextRequest } from '@vercel/edge';
+import { NextResponse } from '@vercel/edge';
 
 const COOKIE_NAME = 'lifeos_admin_session';
 

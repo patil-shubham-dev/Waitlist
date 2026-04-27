@@ -8,5 +8,12 @@
     "build:public": "npm run build --workspace=apps/public",
     "build:admin": "npm run build --workspace=apps/admin",
     "build": "npm run build:public && npm run build:admin && node scripts/build-root.mjs"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@vercel/edge": "^1.1.1",
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.0"
   }
 }
