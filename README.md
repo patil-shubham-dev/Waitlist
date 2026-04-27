@@ -1,93 +1,101 @@
-# LifeOS Waitlist — Monorepo
+# LifeOS Waitlist
 
-Two Vite + React + TypeScript apps, one Supabase backend.
+Premium waitlist and launch-control app for **LifeOS Social**.
 
-| App | Deploy as | Purpose |
-|-----|-----------|---------|
-| `apps/public` | `lifeos.vercel.app` | Public waitlist site |
-| `apps/admin` | `lifeos-admin.vercel.app` | Password-protected admin dashboard |
+It includes:
+- A fully responsive public landing page for mobile and desktop
+- A public questions / suggestions wall with visible admin replies
+- An admin control panel at `/admin7276`
+- A Supabase schema for waitlist, questions, phases, content, visits, and audit logs
+- A single-root Vercel deployment that serves both the public site and admin app
 
-**Design system:** Inter font · `#0B0B0C` background · `#E6E6E6` text · `#FF5A1F` accent · Zero emojis · CSS custom properties only (no Tailwind)
+## Stack
 
----
+- `apps/public`: Vite + React public launch site
+- `apps/admin`: Vite + React admin control panel
+- `api`: Vercel serverless functions for secure admin actions
+- `supabase/schema.sql`: database setup for the `WaitlistApp` Supabase project
 
-## 1. Supabase Setup
+## Required environment variables
 
-Run `supabase/schema.sql` in your Supabase SQL editor, then enable Realtime for:
-- `waitlist`
-- `suggestions`  
-- `page_visits`
+### Public app
+File: `apps/public/.env`
 
-_(Dashboard → Database → Replication → toggle each table on)_
-
----
-
-## 2. Environment Variables
-
-Both `.env` files are pre-filled with your credentials.
-
-**`apps/public/.env`**
-```
-VITE_SUPABASE_URL=https://teranqxkhvxzxxvskhtj.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-**`apps/admin/.env`**
+### Admin app
+File: `apps/admin/.env`
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_ADMIN_PASSWORD=change_this_strong_password
 ```
-VITE_SUPABASE_URL=https://teranqxkhvxzxxvskhtj.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-VITE_ADMIN_PASSWORD=lifeos_admin_2025
+
+### Root Vercel project
+File: `.env` or Vercel project env vars
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ADMIN_PASSWORD=change_this_strong_password
 ```
 
-> Change `VITE_ADMIN_PASSWORD` before going live. `.env` is in `.gitignore`.
+The root env vars are required because the admin panel now uses secure Vercel API routes for protected actions.
 
----
+## Supabase setup
 
-## 3. Local Development
+1. Create or use the Supabase project you want for this app.
+2. Run [`supabase/schema.sql`](./supabase/schema.sql) in the SQL editor.
+3. Make sure Realtime is enabled for:
+   - `waitlist`
+   - `suggestions`
+   - `page_visits`
+   - `timeline_entries`
+   - `site_content`
+
+## Local development
 
 ```bash
 npm install
-npm run dev:public   # localhost:5173
-npm run dev:admin    # localhost:5174
+npm run dev:public
+npm run dev:admin
 ```
 
----
+## Production build
 
-## 4. Deploy to Vercel
+```bash
+npm run build
+```
 
-### Public site
-- Root directory: `apps/public`
-- Framework: Vite
-- Add both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+This produces:
+- `dist/index.html` for the public site
+- `dist/admin7276` for the admin app
 
-### Admin panel (separate Vercel project)
-- Root directory: `apps/admin`
-- Framework: Vite
-- Add all three env vars including a strong `VITE_ADMIN_PASSWORD`
+## Deploy to Vercel
 
-The admin app has `noindex, nofollow` — search engines won't find it.
+Deploy the repository root.
 
----
+Vercel settings:
+- Build command: `npm run build`
+- Output directory: `dist`
 
-## 5. Page Structure
+Recommended free project names:
+- `lifeos-waitlist`
+- `lifeoswaitlist`
+- `lifeos-launch`
 
-### Public site
-1. **Hero** — headline, subtext, email signup, live waitlist count
-2. **What** — 3 outcome-focused bullet points
-3. **How it works** — 5-step numbered flow
-4. **Use cases** — Students / Founders / Creators
-5. **Waitlist** — 2-step form (email → optional details)
-6. **Contact** — lifeossocial01@gmail.com (mailto link)
-7. **Footer** — logo + copyright
+The admin panel will be available at:
 
-### Admin panel
-- **Overview** — stat cards, 14-day signups chart, unanswered alert
-- **Waitlist** — searchable/filterable table + CSV export
-- **Suggestions** — moderation: feature toggle, admin reply, edit/delete
-- **Visits** — live active count, hourly chart, traffic sources, recent log
+```txt
+https://your-project-name.vercel.app/admin7276
+```
 
----
+## Notes
 
-## 6. Contact
-
-**lifeossocial01@gmail.com** — shown on the public site as a mailto link.
+- Public visitors can join the waitlist and post questions or suggestions.
+- Admin replies inherit the reply logo set in `site_content`.
+- The public page copy, phases, and branding are editable from the admin panel.

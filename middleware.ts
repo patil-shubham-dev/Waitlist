@@ -1,33 +1,32 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
+const COOKIE_NAME = 'lifeos_admin_session';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protect all /admin7276 routes
-  if (pathname.startsWith('/admin7276')) {
-    const session = request.cookies.get('admin_session');
-
-    // Allow the login page and its assets
-    if (
-      pathname === '/admin7276' || 
-      pathname === '/admin7276/' || 
-      pathname === '/admin7276/index.html' ||
-      pathname.startsWith('/admin7276/assets/')
-    ) {
-      return NextResponse.next();
-    }
-
-
-    // Require session for anything else in /admin7276/
-    if (!session || session.value !== 'true') {
-      const url = request.nextUrl.clone();
-      url.pathname = '/admin7276';
-      return NextResponse.redirect(url);
-    }
+  if (!pathname.startsWith('/admin7276')) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  if (
+    pathname === '/admin7276' ||
+    pathname === '/admin7276/' ||
+    pathname === '/admin7276/index.html' ||
+    pathname.startsWith('/admin7276/assets/')
+  ) {
+    return NextResponse.next();
+  }
+
+  const session = request.cookies.get(COOKIE_NAME)?.value;
+  if (session === 'true') {
+    return NextResponse.next();
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = '/admin7276';
+  return NextResponse.redirect(url);
 }
 
 export const config = {

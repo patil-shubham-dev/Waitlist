@@ -7,7 +7,6 @@
     "dev:admin": "npm run dev --workspace=apps/admin",
     "build:public": "npm run build --workspace=apps/public",
     "build:admin": "npm run build --workspace=apps/admin",
-    "build": "npm run build:public && npm run build:admin && rm -rf dist && cp -r apps/public/dist dist && mkdir -p dist/admin7276 && cp -r apps/admin/dist/* dist/admin7276/"
+    "build": "npm run build:public && npm run build:admin && node scripts/build-root.mjs"
   }
 }
-

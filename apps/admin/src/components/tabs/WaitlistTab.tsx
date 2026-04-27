@@ -1,134 +1,130 @@
-import { useEffect, useState } from 'react'
-import { supabase, type WaitlistEntry } from '../../lib/supabase'
-import { Search, Download, CheckCircle, XCircle, Copy, ExternalLink } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, Download, Search, Trash2, XCircle } from 'lucide-react';
+import { adminGet, adminPost, type WaitlistRecord } from '../../lib/adminApi';
 
 export default function WaitlistTab() {
-  const [entries, setEntries] = useState<WaitlistEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState('all')
-  const [updating, setUpdating] = useState<string | null>(null)
+  const [items, setItems] = useState<WaitlistRecord[]>([]);
+  const [search, setSearch] = useState('');
+  const [busyId, setBusyId] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    supabase
-      .from('waitlist').select('*').order('created_at', { ascending: false })
-      .then(({ data }) => { setEntries(data ?? []); setLoading(false) })
-  }, [])
+    adminGet<{ items: WaitlistRecord[] }>('waitlist')
+      .then((data) => setItems(data.items))
+      .catch((err: Error) => setError(err.message));
+  }, []);
 
-  const filtered = entries.filter((e) => {
-    const q = search.toLowerCase()
-    const matchSearch = (e.name?.toLowerCase().includes(q) || e.email?.toLowerCase().includes(q))
-    const matchRole = roleFilter === 'all' || e.role === roleFilter
-    return matchSearch && matchRole
-  })
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) =>
+      [item.name, item.email, item.role ?? ''].some((value) => value.toLowerCase().includes(query)),
+    );
+  }, [items, search]);
 
-  const toggleApprove = async (id: string, current: boolean) => {
-    setUpdating(id)
-    await supabase.from('waitlist').update({ approved: !current }).eq('id', id)
-    setEntries((prev) => prev.map((e) => e.id === id ? { ...e, approved: !current } : e))
-    setUpdating(null)
-  }
+  const toggleApproval = async (item: WaitlistRecord) => {
+    setBusyId(item.id);
+    await adminPost('toggle-waitlist-approval', { id: item.id, approved: !item.approved });
+    setItems((current) =>
+      current.map((entry) => (entry.id === item.id ? { ...entry, approved: !entry.approved } : entry)),
+    );
+    setBusyId('');
+  };
 
-  const exportCSV = () => {
-    const rows = [['Name', 'Email', 'Role', 'Status', 'Date'], ...entries.map(e => [e.name, e.email, e.role, e.approved ? 'Approved' : 'Pending', e.created_at])]
-    const csv = rows.map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `lifeos_protocol_export_${new Date().toISOString().slice(0,10)}.csv`
-    a.click()
-  }
+  const removeEntry = async (id: string) => {
+    if (!window.confirm('Delete this waitlist entry?')) return;
+    setBusyId(id);
+    await adminPost('delete-waitlist-entry', { id });
+    setItems((current) => current.filter((entry) => entry.id !== id));
+    setBusyId('');
+  };
+
+  const exportCsv = () => {
+    const rows = [
+      ['Name', 'Email', 'Role', 'Approved', 'Created At'],
+      ...filtered.map((item) => [
+        item.name,
+        item.email,
+        item.role ?? '',
+        item.approved ? 'yes' : 'no',
+        new Date(item.created_at).toISOString(),
+      ]),
+    ];
+    const blob = new Blob([rows.map((row) => row.join(',')).join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `lifeos-waitlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className="main-view">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+    <div className="tab-stack">
+      <div className="tab-header">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 700 }}>PROTOCOL SUBJECTS</h1>
-          <p className="stat-label">{entries.length} NODES IDENTIFIED</p>
+          <h1>Waitlist</h1>
+          <p>Review signups, approve early testers, export the list, and keep launch data clean.</p>
         </div>
-        <button className="btn-hud" onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Download size={14} /> EXPORT_DATA.RAW
+        <button className="admin-button" onClick={exportCsv}>
+          <Download size={16} />
+          Export CSV
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--primary)' }} />
-          <input 
-            className="input-hud" 
-            placeholder="SCAN BY NAME OR EMAIL..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ marginBottom: 0, paddingLeft: '40px' }}
-          />
+      <div className="panel-card">
+        <div className="toolbar-row">
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by name, email, or role"
+            />
+          </div>
         </div>
-        <select 
-          className="input-hud" 
-          style={{ width: '200px', marginBottom: 0 }}
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-        >
-          <option value="all">ALL SECTORS</option>
-          {Array.from(new Set(entries.map(e => e.role))).filter(Boolean).map(role => (
-            <option key={role} value={role}>{role?.toUpperCase()}</option>
-          ))}
-        </select>
-      </div>
 
-      <div className="oracle-table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>SUBJECT</th>
-              <th>CREDENTIALS</th>
-              <th>SECTOR</th>
-              <th>AUTHORIZATION</th>
-              <th>TIMESTAMP</th>
-              <th style={{ textAlign: 'right' }}>COMMANDS</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '4rem' }} className="stat-label">SCANNING ARCHIVES...</td></tr>
-            ) : filtered.map(e => (
-              <tr key={e.id}>
-                <td style={{ fontWeight: 600 }}>{e.name || 'ANONYMOUS'}</td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{e.email}</td>
-                <td><span className="stat-label" style={{ background: 'var(--primary-muted)', padding: '2px 6px', borderRadius: '4px' }}>{e.role || 'BETA'}</span></td>
-                <td>
-                  {e.approved ? (
-                    <span style={{ color: 'var(--safe)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem' }}>
-                      <CheckCircle size={12} /> GRANTED
-                    </span>
-                  ) : (
-                    <span style={{ color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem' }}>
-                      <XCircle size={12} /> PENDING
-                    </span>
-                  )}
-                </td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                  {new Date(e.created_at).toLocaleDateString()}
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <button 
-                    className="btn-hud" 
-                    onClick={() => toggleApprove(e.id, e.approved)}
-                    disabled={updating === e.id}
-                    style={{ 
-                      borderColor: e.approved ? 'var(--critical)' : 'var(--safe)',
-                      color: e.approved ? 'var(--critical)' : 'var(--safe)',
-                      padding: '2px 8px'
-                    }}
-                  >
-                    {updating === e.id ? '...' : e.approved ? 'REVOKE' : 'GRANT'}
-                  </button>
-                </td>
+        {error && <p className="admin-error">{error}</p>}
+
+        <div className="table-shell">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((item) => (
+                <tr key={item.id}>
+                  <td>{item.name}</td>
+                  <td>{item.email}</td>
+                  <td>{item.role || 'other'}</td>
+                  <td>
+                    <span className={`status-pill ${item.approved ? 'ok' : 'pending'}`}>
+                      {item.approved ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                      {item.approved ? 'Approved' : 'Pending'}
+                    </span>
+                  </td>
+                  <td>{new Date(item.created_at).toLocaleString()}</td>
+                  <td className="table-actions">
+                    <button className="admin-button" disabled={busyId === item.id} onClick={() => toggleApproval(item)}>
+                      {item.approved ? 'Revoke' : 'Approve'}
+                    </button>
+                    <button className="icon-button danger" disabled={busyId === item.id} onClick={() => removeEntry(item.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  )
+  );
 }

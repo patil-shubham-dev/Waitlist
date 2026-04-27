@@ -1,48 +1,39 @@
-import { useState, useEffect } from 'react'
-import Login from './components/Login'
-import Dashboard from './components/Dashboard'
-
-const SESSION_KEY = 'lifeos_admin_authed'
+import { useEffect, useState } from 'react';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
 
 export default function App() {
-  const [authed, setAuthed] = useState(false)
-  const [checking, setChecking] = useState(true)
+  const [authed, setAuthed] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(SESSION_KEY)
-    if (stored === 'true') setAuthed(true)
-    setChecking(false)
-  }, [])
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth', { credentials: 'include' });
+        const data = await response.json();
+        setAuthed(Boolean(data.authenticated));
+      } catch {
+        setAuthed(false);
+      } finally {
+        setChecking(false);
+      }
+    };
 
-  const handleLogin = () => {
-    setAuthed(true)
-  }
+    checkSession();
+  }, []);
 
   const handleLogout = async () => {
-    // Clear cookie via API if needed or just clear local state for now
-    setAuthed(false)
-  }
-
+    await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+    setAuthed(false);
+  };
 
   if (checking) {
     return (
-      <div style={{
-        minHeight: '100vh', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        background: '#080808',
-      }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          border: '2px solid #1a1a1a',
-          borderTop: '2px solid #FF5500',
-          animation: 'spin 0.8s linear infinite',
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="app-loading">
+        <div className="loading-dot" />
       </div>
-    )
+    );
   }
 
-  return authed
-    ? <Dashboard onLogout={handleLogout} />
-    : <Login onLogin={handleLogin} />
+  return authed ? <Dashboard onLogout={handleLogout} /> : <Login onLogin={() => setAuthed(true)} />;
 }
