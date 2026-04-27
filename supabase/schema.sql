@@ -247,7 +247,7 @@ values
   ('footer_tagline', 'Built for disciplined students, founders, creators, and builders.'),
   ('brand_reply_name', 'LifeOS Team'),
   ('reply_logo_url', '/assets/logo-mark.svg'),
-  ('brand_wordmark_url', '/assets/logo-wordmark.png')
+  ('brand_wordmark_url', '/assets/logo-wordmark.svg')
 on conflict (key) do nothing;
 
 insert into public.suggestions (title, content, type, status, name, email, is_featured, admin_name, admin_avatar_url, admin_response, admin_responded_at, tags)

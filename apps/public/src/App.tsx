@@ -37,7 +37,7 @@ const DEFAULT_CONTENT = {
   footer_tagline: 'Built for disciplined students, founders, creators, and builders.',
   brand_reply_name: 'LifeOS Team',
   reply_logo_url: '/assets/logo-mark.svg',
-  brand_wordmark_url: '/assets/logo-wordmark.png',
+  brand_wordmark_url: '/assets/logo-wordmark.svg',
 };
 
 type ContentState = typeof DEFAULT_CONTENT;
@@ -98,6 +98,38 @@ function mergeContent(content: SiteContent[]) {
 
 function sectionScroll(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+const VISITOR_COOKIE = 'lifeos_visitor';
+
+function writeVisitorCookie(value: { name: string; email: string; role?: string }) {
+  const encoded = encodeURIComponent(JSON.stringify(value));
+  document.cookie = `${VISITOR_COOKIE}=${encoded}; path=/; max-age=${60 * 60 * 24 * 180}; samesite=lax`;
+  localStorage.setItem(VISITOR_COOKIE, JSON.stringify(value));
+}
+
+function readVisitorCookie() {
+  const cookieValue = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith(`${VISITOR_COOKIE}=`))
+    ?.split('=')[1];
+
+  if (cookieValue) {
+    try {
+      return JSON.parse(decodeURIComponent(cookieValue)) as { name: string; email: string; role?: string };
+    } catch {
+      return null;
+    }
+  }
+
+  const localValue = localStorage.getItem(VISITOR_COOKIE);
+  if (!localValue) return null;
+
+  try {
+    return JSON.parse(localValue) as { name: string; email: string; role?: string };
+  } catch {
+    return null;
+  }
 }
 
 function formatRelativeDate(date: string) {
@@ -208,15 +240,18 @@ export default function App() {
     role: 'student',
   });
   const [joinState, setJoinState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [registeredVisitor, setRegisteredVisitor] = useState<{ name: string; email: string; role?: string } | null>(null);
 
   const [questionForm, setQuestionForm] = useState({
-    name: '',
-    email: '',
     title: '',
     content: '',
     type: 'question',
   });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    setRegisteredVisitor(readVisitorCookie());
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -302,16 +337,28 @@ export default function App() {
 
     setJoinState('success');
     setWaitlistCount((current) => current + 1);
+    const visitor = {
+      name: payload.name,
+      email: payload.email,
+      role: payload.role,
+    };
+    writeVisitorCookie(visitor);
+    setRegisteredVisitor(visitor);
     setJoinForm({ name: '', email: '', role: 'student' });
   };
 
   const handleQuestionSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!registeredVisitor) {
+      setQuestionState('error');
+      sectionScroll('waitlist');
+      return;
+    }
     setQuestionState('loading');
 
     const payload = {
-      name: questionForm.name.trim() || null,
-      email: questionForm.email.trim().toLowerCase(),
+      name: registeredVisitor.name.trim() || null,
+      email: registeredVisitor.email.trim().toLowerCase(),
       title: questionForm.title.trim() || null,
       content: questionForm.content.trim(),
       type: questionForm.type,
@@ -330,8 +377,6 @@ export default function App() {
     setQuestionState('success');
     setQuestions((current) => [data as Suggestion, ...current].slice(0, 12));
     setQuestionForm({
-      name: '',
-      email: '',
       title: '',
       content: '',
       type: 'question',
@@ -555,26 +600,23 @@ export default function App() {
                   <LayoutGrid size={18} />
                 </div>
 
-                <div className="field-row">
-                  <label>
-                    <span>Name</span>
-                    <input
-                      value={questionForm.name}
-                      onChange={(event) => setQuestionForm((current) => ({ ...current, name: event.target.value }))}
-                      placeholder="Your name"
-                    />
-                  </label>
-                  <label>
-                    <span>Email required</span>
-                    <input
-                      type="email"
-                      value={questionForm.email}
-                      onChange={(event) => setQuestionForm((current) => ({ ...current, email: event.target.value }))}
-                      placeholder="you@example.com"
-                      required
-                    />
-                  </label>
-                </div>
+                {registeredVisitor ? (
+                  <div className="registered-banner">
+                    <div>
+                      <strong>{registeredVisitor.name}</strong>
+                      <span>{registeredVisitor.email}</span>
+                    </div>
+                    <p>Registered in this browser. You can post directly now.</p>
+                  </div>
+                ) : (
+                  <div className="registration-banner">
+                    <strong>Register once before posting</strong>
+                    <p>Join the waitlist below and this browser will remember you for future questions and suggestions.</p>
+                    <button className="button button-secondary button-compact" type="button" onClick={() => sectionScroll('waitlist')}>
+                      Register this browser
+                    </button>
+                  </div>
+                )}
 
                 <div className="field-row">
                   <label>
@@ -604,16 +646,16 @@ export default function App() {
                     value={questionForm.content}
                     onChange={(event) => setQuestionForm((current) => ({ ...current, content: event.target.value }))}
                     placeholder="Ask a question, request a feature, or suggest an improvement."
-                    rows={5}
+                    rows={4}
                     required
                   />
                 </label>
 
-                <button className="button button-primary" type="submit" disabled={questionState === 'loading'}>
+                <button className="button button-primary" type="submit" disabled={questionState === 'loading' || !registeredVisitor}>
                   {questionState === 'loading' ? 'Sending...' : 'Publish to the wall'}
                 </button>
                 {questionState === 'success' && <p className="success-text">Your post is now visible on the public wall.</p>}
-                {questionState === 'error' && <p className="error-text">That could not be submitted right now. Please try again.</p>}
+                {questionState === 'error' && <p className="error-text">{registeredVisitor ? 'That could not be submitted right now. Please try again.' : 'Register first, then ask your question from this browser.'}</p>}
               </form>
 
               <div className="thread-list">
