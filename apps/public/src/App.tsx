@@ -613,8 +613,11 @@ function App() {
               </article>
 
               <div className="thread-stack">
-                {questions.slice(0, 3).map((question) => (
-                  <article className="product-card thread-card" key={question.id}>
+                {questions
+                  .filter((q) => q.id !== featuredQuestion?.id)
+                  .slice(0, 3)
+                  .map((question) => (
+                    <article className="product-card thread-card" key={question.id}>
                     <h3>{question.title || 'Question'}</h3>
                     <p>{question.content}</p>
                     
