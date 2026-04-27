@@ -2,105 +2,129 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
-  LayoutGrid,
+  Flame,
   Menu,
-  MessageSquareMore,
+  MessageSquareText,
   ShieldCheck,
   Sparkles,
   Target,
   Trophy,
-  UserRound,
   X,
 } from 'lucide-react';
-import { supabase, type SiteContent, type Suggestion, type TimelineEntry } from './lib/supabase';
+import { supabase, type Suggestion } from './lib/supabase';
 import { useVisitTracker } from './hooks/useVisitTracker';
 
-const DEFAULT_CONTENT = {
-  nav_cta: 'Join the founding waitlist',
-  hero_badge: 'LifeOS Social - premium launch',
-  hero_title: 'The social operating system for people who want proof, progress, and momentum.',
-  hero_subtext:
-    'LifeOS turns daily action into visible growth. Plan your work, prove what you finished, earn momentum, and stay surrounded by people who are moving forward too.',
-  hero_primary_cta: 'Join the waitlist',
-  hero_secondary_cta: 'See the product story',
-  problem_title: 'Why LifeOS exists',
-  problem_body:
-    'Most productivity apps help you plan. Most social apps help you escape. LifeOS is built to help you act, verify progress, and come back tomorrow stronger.',
-  questions_title: 'Questions, ideas, and launch feedback',
-  questions_body:
-    'Visitors can ask questions, suggest improvements, and follow the product journey. Replies from the team stay visible to everyone.',
-  waitlist_title: 'Get early access to LifeOS',
-  waitlist_body:
-    'Join the founding list for launch updates, beta access, and roadmap drops.',
-  footer_tagline: 'Built for disciplined students, founders, creators, and builders.',
-  brand_reply_name: 'LifeOS Team',
-  reply_logo_url: '/assets/logo-mark.jpg',
-  brand_wordmark_url: '/assets/logo-wordmark.svg',
-};
-
-type ContentState = typeof DEFAULT_CONTENT;
-
 const NAV_ITEMS = [
-  { id: 'problem', label: 'Problem' },
-  { id: 'story', label: 'How It Works' },
-  { id: 'phases', label: 'Phases' },
-  { id: 'questions', label: 'Community' },
+  { id: 'problem', label: 'Why LifeOS' },
+  { id: 'loop', label: 'Core Loop' },
+  { id: 'roadmap', label: 'Roadmap' },
+  { id: 'questions', label: 'Questions' },
 ];
 
-const OUTCOMES = [
+const PRODUCT_COPY = {
+  navCta: 'Join the waitlist',
+  heroBadge: 'Execution-driven social productivity',
+  heroTitle: 'LifeOS turns action into visible progress.',
+  heroBody:
+    'Plan less. Execute more. LifeOS helps users act, prove their work, earn growth, and return the next day with momentum.',
+  heroPrimary: 'Get early access',
+  heroSecondary: 'Read the system',
+  problemTitle: 'Why LifeOS exists',
+  problemBody:
+    'Most productivity apps help you plan without pressure. Most social platforms keep you busy without progress. LifeOS connects execution, proof, and social accountability in one system.',
+  loopTitle: 'The LifeOS core loop',
+  loopBody:
+    'Action becomes visible, proof is validated, and progress compounds through streaks, XP, and public momentum.',
+  roadmapTitle: 'Roadmap built from the product system',
+  roadmapBody:
+    'The rollout follows the actual PRD: task execution first, validation and integrity next, then the full social layer around proof and growth.',
+  questionsTitle: 'Questions and product feedback',
+  questionsBody:
+    'Users can ask practical product questions or suggest improvements. Every reply stays visible so the launch page becomes a shared source of product clarity.',
+  ctaTitle: 'Join before the public launch',
+  ctaBody:
+    'Early users help shape the execution system, the proof loop, and the social layer before LifeOS opens publicly.',
+  ctaTrust: 'No spam. Only product updates.',
+  footer: 'Built for people who want to complete real work, feel progress, and come back tomorrow.',
+};
+
+const PROBLEM_CARDS = [
   {
     icon: Target,
-    title: 'Action first',
-    body: 'Every part of LifeOS is designed to move you from intention into execution.',
+    label: 'Execution',
+    title: 'Action-first system',
+    body: 'LifeOS is built around tasks getting done, not lists getting longer.',
   },
   {
     icon: ShieldCheck,
-    title: 'Proof and trust',
-    body: 'Progress is not guessed. It is shown, reviewed, and turned into visible momentum.',
+    label: 'Proof',
+    title: 'Proof-based progress',
+    body: 'Work must be visible and verifiable before it becomes growth.',
   },
   {
     icon: Trophy,
-    title: 'Social motivation',
-    body: 'You stay consistent because the system, your community, and your streaks keep pulling you back in.',
+    label: 'Social',
+    title: 'Social accountability',
+    body: 'Consistency is reinforced through community, streaks, and public progress.',
   },
 ];
 
-const CORE_LOOP = [
+const LOOP_CARDS = [
   {
+    step: '01',
     title: 'Consume',
-    body: 'See progress-driven content instead of endless distraction.',
+    body: 'See progress-driven content, not distraction.',
   },
   {
+    step: '02',
     title: 'Act',
-    body: 'Start the next meaningful task with AI-guided structure.',
+    body: 'Start meaningful tasks with structure and intent.',
   },
   {
+    step: '03',
     title: 'Prove',
-    body: 'Upload proof so effort becomes visible, trusted, and rewarding.',
+    body: 'Upload proof so AI can validate the effort.',
   },
   {
+    step: '04',
     title: 'Earn',
-    body: 'Build streaks, points, and a public record of progress that compounds.',
+    body: 'Gain XP, streaks, and visible progress that compounds.',
   },
 ];
 
-function mergeContent(content: SiteContent[]) {
-  return content.reduce<ContentState>(
-    (acc, item) => {
-      (acc as Record<string, string>)[item.key] = item.value;
-      return acc;
-    },
-    { ...DEFAULT_CONTENT } as ContentState,
-  );
-}
+const ROADMAP_CARDS = [
+  {
+    status: 'Past',
+    title: 'Foundation',
+    body: 'Core infrastructure, waitlist flow, and the first task-driven product direction.',
+    points: ['Task system', 'Realtime data layer', 'Launch-ready web stack'],
+  },
+  {
+    status: 'Past',
+    title: 'Security and integrity',
+    body: 'Validation rules, anti-cheat thinking, and system safety before scale.',
+    points: ['Proof review model', 'Integrity controls', 'Safer admin operations'],
+  },
+  {
+    status: 'Present',
+    title: 'AI proof system',
+    body: 'The current focus: make completed work visible, reviewable, and trusted.',
+    points: ['Proof submission', 'Confidence checks', 'Verified progress'],
+  },
+  {
+    status: 'Future',
+    title: 'Gamification and social layer',
+    body: 'Expand into streaks, XP, community pressure, and the public beta network.',
+    points: ['XP and streak engine', 'Communities and sharing', 'Public beta launch'],
+  },
+];
+
+const VISITOR_COOKIE = 'lifeos_visitor';
 
 function sectionScroll(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-
-const VISITOR_COOKIE = 'lifeos_visitor';
 
 function writeVisitorCookie(value: { name: string; email: string; role?: string }) {
   const encoded = encodeURIComponent(JSON.stringify(value));
@@ -142,36 +166,30 @@ function formatRelativeDate(date: string) {
   return `${days}d ago`;
 }
 
-function Background() {
-  return (
-    <>
-      <div className="bg-base" />
-      <div className="bg-ambient" />
-      <div className="bg-grid" />
-    </>
-  );
-}
-
 function Navbar({
   activeSection,
   ctaLabel,
-  wordmarkUrl,
+  compact,
 }: {
   activeSection: string;
   ctaLabel: string;
-  wordmarkUrl: string;
+  compact: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="navbar-shell">
+    <header className={`navbar-shell ${compact ? 'compact' : ''}`}>
       <nav className="navbar">
-        <a className="brand-lockup" href="#top" onClick={(event) => {
-          event.preventDefault();
-          sectionScroll('top');
-        }}>
+        <a
+          className="brand-lockup"
+          href="#top"
+          onClick={(event) => {
+            event.preventDefault();
+            sectionScroll('top');
+          }}
+        >
           <img className="brand-mark" src="/assets/logo-mark.jpg" alt="LifeOS" />
-          <img className="brand-wordmark" src={wordmarkUrl} alt="LifeOS" />
+          <img className="brand-wordmark" src="/assets/logo-wordmark.svg" alt="LifeOS" />
         </a>
 
         <div className="nav-center">
@@ -190,11 +208,7 @@ function Navbar({
           <button className="button button-primary button-small" onClick={() => sectionScroll('waitlist')}>
             {ctaLabel}
           </button>
-          <button
-            className="mobile-nav-toggle"
-            aria-label="Open navigation"
-            onClick={() => setOpen((current) => !current)}
-          >
+          <button className="mobile-nav-toggle" aria-label="Open navigation" onClick={() => setOpen((current) => !current)}>
             {open ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
@@ -231,10 +245,9 @@ export default function App() {
   useVisitTracker();
 
   const [waitlistCount, setWaitlistCount] = useState(0);
-  const [content, setContent] = useState<ContentState>(DEFAULT_CONTENT);
-  const [phases, setPhases] = useState<TimelineEntry[]>([]);
   const [questions, setQuestions] = useState<Suggestion[]>([]);
   const [activeSection, setActiveSection] = useState('problem');
+  const [navCompact, setNavCompact] = useState(false);
 
   const [joinForm, setJoinForm] = useState({
     name: '',
@@ -247,7 +260,6 @@ export default function App() {
   const [questionForm, setQuestionForm] = useState({
     title: '',
     content: '',
-    type: 'question',
   });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
@@ -257,26 +269,29 @@ export default function App() {
 
   useEffect(() => {
     const load = async () => {
-      const [{ count }, contentRes, phasesRes, questionsRes] = await Promise.all([
+      const [{ count }, questionsRes] = await Promise.all([
         supabase.from('waitlist').select('*', { count: 'exact', head: true }),
-        supabase.from('site_content').select('*'),
-        supabase.from('timeline_entries').select('*').order('sort_order', { ascending: true }),
         supabase
           .from('suggestions')
           .select('*')
           .eq('is_public', true)
           .order('is_featured', { ascending: false })
           .order('created_at', { ascending: false })
-          .limit(12),
+          .limit(6),
       ]);
 
       setWaitlistCount(count ?? 0);
-      setContent(mergeContent((contentRes.data ?? []) as SiteContent[]));
-      setPhases((phasesRes.data ?? []) as TimelineEntry[]);
       setQuestions((questionsRes.data ?? []) as Suggestion[]);
     };
 
     load();
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setNavCompact(window.scrollY > 20);
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
@@ -289,30 +304,12 @@ export default function App() {
           }
         });
       },
-      { rootMargin: '-35% 0px -45% 0px', threshold: 0.15 },
+      { rootMargin: '-35% 0px -45% 0px', threshold: 0.18 },
     );
 
     nodes.forEach((node) => observer.observe(node));
     return () => observer.disconnect();
-  }, [phases.length, questions.length]);
-
-  useEffect(() => {
-    const revealItems = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.16 },
-    );
-
-    revealItems.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, [phases.length, questions.length]);
+  }, [questions.length]);
 
   const featuredQuestion = useMemo(
     () => questions.find((item) => item.is_featured) ?? questions[0],
@@ -339,11 +336,7 @@ export default function App() {
 
     setJoinState('success');
     setWaitlistCount((current) => current + 1);
-    const visitor = {
-      name: payload.name,
-      email: payload.email,
-      role: payload.role,
-    };
+    const visitor = { name: payload.name, email: payload.email, role: payload.role };
     writeVisitorCookie(visitor);
     setRegisteredVisitor(visitor);
     setJoinForm({ name: '', email: '', role: 'student' });
@@ -356,6 +349,7 @@ export default function App() {
       sectionScroll('waitlist');
       return;
     }
+
     setQuestionState('loading');
 
     const payload = {
@@ -363,7 +357,7 @@ export default function App() {
       email: registeredVisitor.email.trim().toLowerCase(),
       title: questionForm.title.trim() || null,
       content: questionForm.content.trim(),
-      type: questionForm.type,
+      type: 'question',
       status: 'open',
       author_avatar_url: '/assets/default-avatar.svg',
       is_public: true,
@@ -377,114 +371,68 @@ export default function App() {
     }
 
     setQuestionState('success');
-    setQuestions((current) => [data as Suggestion, ...current].slice(0, 12));
-    setQuestionForm({
-      title: '',
-      content: '',
-      type: 'question',
-    });
+    setQuestions((current) => [data as Suggestion, ...current].slice(0, 6));
+    setQuestionForm({ title: '', content: '' });
   };
 
   return (
     <div className="page-shell" id="top">
-      <Background />
-      <Navbar activeSection={activeSection} ctaLabel={content.nav_cta} wordmarkUrl={content.brand_wordmark_url} />
+      <Navbar activeSection={activeSection} ctaLabel={PRODUCT_COPY.navCta} compact={navCompact} />
 
-      <main>
+      <main className="page-main">
         <section className="hero-section">
-          <div className="hero-grid">
-            <div className="hero-copy" data-reveal>
-              <div className="eyebrow">
+          <div className="hero-layout">
+            <div className="hero-copy">
+              <span className="eyebrow">
                 <Sparkles size={14} />
-                <span>{content.hero_badge}</span>
-              </div>
-              <h1>{content.hero_title}</h1>
-              <p>{content.hero_subtext}</p>
+                {PRODUCT_COPY.heroBadge}
+              </span>
+              <h1>{PRODUCT_COPY.heroTitle}</h1>
+              <p>{PRODUCT_COPY.heroBody}</p>
               <div className="hero-actions">
                 <button className="button button-primary" onClick={() => sectionScroll('waitlist')}>
-                  {content.hero_primary_cta}
-                  <ChevronRight size={18} />
+                  {PRODUCT_COPY.heroPrimary}
+                  <ChevronRight size={16} />
                 </button>
-                <button className="button button-secondary" onClick={() => sectionScroll('story')}>
-                  {content.hero_secondary_cta}
-                  <ChevronDown size={18} />
+                <button className="button button-secondary" onClick={() => sectionScroll('loop')}>
+                  {PRODUCT_COPY.heroSecondary}
                 </button>
-              </div>
-              <div className="hero-metrics">
-                <div>
-                  <strong>{waitlistCount.toLocaleString()}</strong>
-                  <span>Founding members queued</span>
-                </div>
-                <div>
-                  <strong>Mobile + desktop</strong>
-                  <span>Fluid layout and responsive launch flow</span>
-                </div>
-                <div>
-                  <strong>Q&A live</strong>
-                  <span>Questions and admin replies visible to every visitor</span>
-                </div>
               </div>
             </div>
 
-            <div className="hero-visual" data-reveal>
-              <div className="device-stage">
-                <div className="device-chrome">
-                  <span />
-                  <span />
-                  <span />
+            <aside className="hero-system-card">
+              <div className="system-label">Core truth</div>
+              <h2>If one task gets completed and the user returns tomorrow, the system is working.</h2>
+              <div className="system-list">
+                <div className="system-row">
+                  <CheckCircle2 size={16} />
+                  <span>{waitlistCount.toLocaleString()} people waiting for launch access</span>
                 </div>
-                <div className="device-content">
-                  <div className="mini-card">
-                    <p className="mini-label">Today</p>
-                    <h3>Consume - Act - Prove - Earn</h3>
-                    <p className="mini-body">
-                      The launch page now tells the real product story: disciplined action, social motivation, and proof-driven growth.
-                    </p>
-                  </div>
-                  <div className="proof-list">
-                    {CORE_LOOP.map((step, index) => (
-                      <div className="proof-row" key={step.title} style={{ animationDelay: `${index * 120}ms` }}>
-                        <span className="proof-index">0{index + 1}</span>
-                        <div>
-                          <strong>{step.title}</strong>
-                          <p>{step.body}</p>
-                        </div>
-                        <ArrowRight size={16} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mini-stat-row">
-                    <div className="mini-stat">
-                      <span>Trust</span>
-                      <strong>Proof-based</strong>
-                    </div>
-                    <div className="mini-stat">
-                      <span>Retention</span>
-                      <strong>Streak logic</strong>
-                    </div>
-                    <div className="mini-stat">
-                      <span>Signal</span>
-                      <strong>Community feedback</strong>
-                    </div>
-                  </div>
+                <div className="system-row">
+                  <Flame size={16} />
+                  <span>Proof, streaks, and XP are tied to visible action</span>
+                </div>
+                <div className="system-row">
+                  <MessageSquareText size={16} />
+                  <span>Public feedback stays attached to the product story</span>
                 </div>
               </div>
-            </div>
+            </aside>
           </div>
         </section>
 
-        <section id="problem" data-section="problem" className="content-section">
-          <div className="section-heading" data-reveal>
-            <span className="section-kicker">Problem clarity</span>
-            <h2>{content.problem_title}</h2>
-            <p>{content.problem_body}</p>
+        <section id="problem" data-section="problem" className="page-section">
+          <div className="section-header">
+            <span className="section-label">Problem</span>
+            <h2>{PRODUCT_COPY.problemTitle}</h2>
+            <p>{PRODUCT_COPY.problemBody}</p>
           </div>
-
-          <div className="problem-grid">
-            {OUTCOMES.map(({ icon: Icon, title, body }) => (
-              <article className="surface-card" data-reveal key={title}>
-                <div className="icon-badge">
-                  <Icon size={18} />
+          <div className="card-grid card-grid-3">
+            {PROBLEM_CARDS.map(({ icon: Icon, label, title, body }) => (
+              <article className="product-card" key={title}>
+                <div className="card-topline">
+                  <div className="icon-chip"><Icon size={16} /></div>
+                  <span>{label}</span>
                 </div>
                 <h3>{title}</h3>
                 <p>{body}</p>
@@ -493,47 +441,43 @@ export default function App() {
           </div>
         </section>
 
-        <section id="story" data-section="story" className="content-section">
-          <div className="section-heading narrow" data-reveal>
-            <span className="section-kicker">Product story</span>
-            <h2>Built around the LifeOS core loop</h2>
-            <p>
-              The app is not another habit dashboard. It is a social productivity system where action becomes visible, verifiable, and rewarding.
-            </p>
+        <section id="loop" data-section="loop" className="page-section section-alt">
+          <div className="section-header">
+            <span className="section-label">System</span>
+            <h2>{PRODUCT_COPY.loopTitle}</h2>
+            <p>{PRODUCT_COPY.loopBody}</p>
           </div>
-
-          <div className="story-grid">
-            {CORE_LOOP.map((step, index) => (
-              <article className="story-card" data-reveal key={step.title}>
-                <span className="story-index">0{index + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
+          <div className="card-grid card-grid-4">
+            {LOOP_CARDS.map((item) => (
+              <article className="product-card loop-card" key={item.step}>
+                <span className="step-chip">{item.step}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section id="phases" data-section="phases" className="content-section">
-          <div className="section-heading" data-reveal>
-            <span className="section-kicker">Launch phases</span>
-            <h2>From foundation to public beta</h2>
-            <p>
-              The roadmap is now easier to understand, easier to edit from admin, and more aligned with the LifeOS Social PRD.
-            </p>
+        <section id="roadmap" data-section="roadmap" className="page-section">
+          <div className="section-header">
+            <span className="section-label">Roadmap</span>
+            <h2>{PRODUCT_COPY.roadmapTitle}</h2>
+            <p>{PRODUCT_COPY.roadmapBody}</p>
           </div>
-
-          <div className="phase-list">
-            {phases.map((phase) => (
-              <article className={`phase-card phase-${phase.status}`} data-reveal key={phase.id}>
-                <div className="phase-topline">
-                  <span className="phase-status">{phase.status}</span>
-                  <span className="phase-order">{String(phase.sort_order).padStart(2, '0')}</span>
+          <div className="card-grid card-grid-2">
+            {ROADMAP_CARDS.map((item) => (
+              <article className="product-card roadmap-card" key={item.title}>
+                <div className="card-topline">
+                  <span className={`status-chip status-${item.status.toLowerCase()}`}>{item.status}</span>
+                  <span className="status-meaning">
+                    {item.status === 'Past' ? 'Shipped' : item.status === 'Present' ? 'In progress' : 'Planned'}
+                  </span>
                 </div>
-                <h3>{phase.title}</h3>
-                <p>{phase.description}</p>
-                <div className="phase-tags">
-                  {(phase.items ?? []).map((item) => (
-                    <span key={item}>{item}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                <div className="point-list">
+                  {item.points.map((point) => (
+                    <span key={point}>{point}</span>
                   ))}
                 </div>
               </article>
@@ -541,172 +485,125 @@ export default function App() {
           </div>
         </section>
 
-        <section id="questions" data-section="questions" className="content-section">
-          <div className="section-heading" data-reveal>
-            <span className="section-kicker">Public feedback wall</span>
-            <h2>{content.questions_title}</h2>
-            <p>{content.questions_body}</p>
+        <section id="questions" data-section="questions" className="page-section section-alt">
+          <div className="section-header">
+            <span className="section-label">Feedback</span>
+            <h2>{PRODUCT_COPY.questionsTitle}</h2>
+            <p>{PRODUCT_COPY.questionsBody}</p>
           </div>
 
           <div className="questions-layout">
-            <div className="surface-card feature-card" data-reveal>
-              <div className="feature-card-header">
-                <div>
-                  <span className="section-kicker">Featured thread</span>
-                  <h3>{featuredQuestion?.title || 'Ask what you want to know before launch'}</h3>
-                </div>
-                <MessageSquareMore size={18} />
-              </div>
-              {featuredQuestion ? (
-                <>
-                  <div className="thread-author">
-                    <img src={featuredQuestion.author_avatar_url} alt={featuredQuestion.author_name} />
-                    <div>
-                      <strong>{featuredQuestion.author_name}</strong>
-                      <span>{formatRelativeDate(featuredQuestion.created_at)}</span>
-                    </div>
-                  </div>
-                  <p className="thread-body">{featuredQuestion.content}</p>
-                  {featuredQuestion.admin_response ? (
-                    <div className="reply-card">
-                      <div className="thread-author">
-                        <img
-                          src={featuredQuestion.admin_avatar_url || content.reply_logo_url}
-                          alt={featuredQuestion.admin_name || content.brand_reply_name}
-                        />
-                        <div>
-                          <strong>{featuredQuestion.admin_name || content.brand_reply_name}</strong>
-                          <span>Official reply</span>
-                        </div>
-                      </div>
-                      <p>{featuredQuestion.admin_response}</p>
-                    </div>
-                  ) : (
-                    <div className="pending-chip">Awaiting team reply</div>
-                  )}
-                </>
-              ) : (
-                <div className="empty-thread">
-                  <p className="thread-body">
-                    The public Q&amp;A stream will appear here as soon as visitors start asking questions.
-                  </p>
-                  <span className="empty-thread-note">First public posts will appear here for everyone.</span>
-                </div>
-              )}
-            </div>
-
             <div className="question-column">
-              <form className="surface-card question-form" data-reveal onSubmit={handleQuestionSubmit}>
-                <div className="feature-card-header">
-                  <div>
-                    <span className="section-kicker">Ask publicly</span>
-                    <h3>Questions, suggestions, launch feedback</h3>
-                  </div>
-                  <LayoutGrid size={18} />
+              <article className="product-card featured-card">
+                <div className="card-topline">
+                  <span>Featured thread</span>
+                  <MessageSquareText size={16} />
                 </div>
-
-                {registeredVisitor ? (
-                  <div className="registered-banner">
-                    <div>
-                      <strong>{registeredVisitor.name}</strong>
-                      <span>{registeredVisitor.email}</span>
-                    </div>
-                    <p>Registered in this browser. You can post directly.</p>
-                  </div>
-                ) : (
-                  <div className="registration-banner">
-                    <strong>Register once before posting</strong>
-                    <p>Join the waitlist below and this browser will remember you for future questions and suggestions.</p>
-                    <button className="button button-secondary button-compact" type="button" onClick={() => sectionScroll('waitlist')}>
-                      Register this browser
-                    </button>
-                  </div>
-                )}
-
-                <div className="field-row">
-                  <label>
-                    <span>Type</span>
-                    <select
-                      value={questionForm.type}
-                      onChange={(event) => setQuestionForm((current) => ({ ...current, type: event.target.value }))}
-                    >
-                      <option value="question">Question</option>
-                      <option value="suggestion">Suggestion</option>
-                      <option value="feedback">Feedback</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span>Headline</span>
-                    <input
-                      value={questionForm.title}
-                      onChange={(event) => setQuestionForm((current) => ({ ...current, title: event.target.value }))}
-                      placeholder="What do you want to know?"
-                    />
-                  </label>
-                </div>
-
-                <label>
-                  <span>Message</span>
-                  <textarea
-                    value={questionForm.content}
-                    onChange={(event) => setQuestionForm((current) => ({ ...current, content: event.target.value }))}
-                    placeholder="Ask a question, request a feature, or suggest an improvement."
-                    rows={4}
-                    required
-                  />
-                </label>
-
-                <button className="button button-primary" type="submit" disabled={questionState === 'loading' || !registeredVisitor}>
-                  {questionState === 'loading' ? 'Sending...' : 'Publish to the wall'}
-                </button>
-                {questionState === 'success' && <p className="success-text">Your post is now visible on the public wall.</p>}
-                {questionState === 'error' && <p className="error-text">{registeredVisitor ? 'That could not be submitted right now. Please try again.' : 'Register first, then ask your question from this browser.'}</p>}
-              </form>
-
-              <div className="thread-list">
-                {questions.map((question) => (
-                  <article className="surface-card thread-card" data-reveal key={question.id}>
-                    <div className="thread-author">
-                      <img src={question.author_avatar_url} alt={question.author_name} />
+                <h3>{featuredQuestion?.title || 'Public product questions will appear here.'}</h3>
+                {featuredQuestion ? (
+                  <>
+                    <div className="thread-meta">
+                      <img src={featuredQuestion.author_avatar_url} alt={featuredQuestion.author_name} />
                       <div>
-                        <strong>{question.author_name}</strong>
-                        <span>{question.type} · {formatRelativeDate(question.created_at)}</span>
+                        <strong>{featuredQuestion.author_name}</strong>
+                        <span>{formatRelativeDate(featuredQuestion.created_at)}</span>
                       </div>
                     </div>
-                    {question.title && <h3>{question.title}</h3>}
-                    <p className="thread-body">{question.content}</p>
-                    {question.admin_response && (
-                      <div className="reply-card compact">
-                        <div className="thread-author">
-                          <img
-                            src={question.admin_avatar_url || content.reply_logo_url}
-                            alt={question.admin_name || content.brand_reply_name}
-                          />
+                    <p>{featuredQuestion.content}</p>
+                    {featuredQuestion.admin_response && (
+                      <div className="reply-box">
+                        <div className="thread-meta">
+                          <img src={featuredQuestion.admin_avatar_url || '/assets/logo-mark.jpg'} alt="LifeOS Team" />
                           <div>
-                            <strong>{question.admin_name || content.brand_reply_name}</strong>
-                            <span>{question.status}</span>
+                            <strong>LifeOS Team</strong>
+                            <span>Official reply</span>
                           </div>
                         </div>
-                        <p>{question.admin_response}</p>
+                        <p>{featuredQuestion.admin_response}</p>
                       </div>
                     )}
+                  </>
+                ) : (
+                  <p>Visitors will see the clearest questions and product replies without leaving the landing page.</p>
+                )}
+              </article>
+
+              <div className="thread-stack">
+                {questions.slice(0, 3).map((question) => (
+                  <article className="product-card thread-card" key={question.id}>
+                    <h3>{question.title || 'Question'}</h3>
+                    <p>{question.content}</p>
                   </article>
                 ))}
               </div>
             </div>
+
+            <form className="product-card composer-card" onSubmit={handleQuestionSubmit}>
+              <div className="card-topline">
+                <span>Post a question</span>
+              </div>
+              {registeredVisitor ? (
+                <div className="visitor-banner">
+                  <strong>{registeredVisitor.name}</strong>
+                  <span>{registeredVisitor.email}</span>
+                </div>
+              ) : (
+                <div className="visitor-banner muted">
+                  <strong>Register once before posting</strong>
+                  <span>Join the waitlist below and this browser will remember you.</span>
+                  <button className="button button-secondary button-inline" type="button" onClick={() => sectionScroll('waitlist')}>
+                    Register this browser
+                  </button>
+                </div>
+              )}
+
+              <label className="field">
+                <span>Optional title</span>
+                <input
+                  value={questionForm.title}
+                  onChange={(event) => setQuestionForm((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Example: Daily streak support"
+                />
+              </label>
+
+              <label className="field">
+                <span>Message</span>
+                <textarea
+                  value={questionForm.content}
+                  onChange={(event) => setQuestionForm((current) => ({ ...current, content: event.target.value }))}
+                  placeholder="Ask a question or suggest something..."
+                  rows={5}
+                  required
+                />
+              </label>
+
+              <p className="helper-text">Example: Can I track my daily streak?</p>
+
+              <button className="button button-primary button-full" type="submit" disabled={questionState === 'loading' || !registeredVisitor}>
+                {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
+              </button>
+
+              {questionState === 'success' && <p className="feedback success">Your question is now visible on the wall.</p>}
+              {questionState === 'error' && (
+                <p className="feedback error">
+                  {registeredVisitor ? 'Could not post right now. Please try again.' : 'Join the waitlist first, then post from this browser.'}
+                </p>
+              )}
+            </form>
           </div>
         </section>
 
-        <section id="waitlist" className="content-section waitlist-band">
-          <div className="waitlist-panel" data-reveal>
-            <div className="waitlist-copy">
-              <span className="section-kicker">Founding access</span>
-              <h2>{content.waitlist_title}</h2>
-              <p>{content.waitlist_body}</p>
+        <section id="waitlist" className="page-section">
+          <div className="cta-panel">
+            <div className="cta-copy">
+              <span className="section-label">Waitlist</span>
+              <h2>{PRODUCT_COPY.ctaTitle}</h2>
+              <p>{PRODUCT_COPY.ctaBody}</p>
+              <span className="trust-line">{PRODUCT_COPY.ctaTrust}</span>
             </div>
 
             <form className="waitlist-form" onSubmit={handleJoin}>
-              <label>
+              <label className="field">
                 <span>Name</span>
                 <input
                   value={joinForm.name}
@@ -714,7 +611,7 @@ export default function App() {
                   placeholder="Your name"
                 />
               </label>
-              <label>
+              <label className="field">
                 <span>Email</span>
                 <input
                   type="email"
@@ -724,7 +621,7 @@ export default function App() {
                   required
                 />
               </label>
-              <label>
+              <label className="field">
                 <span>Role</span>
                 <select
                   value={joinForm.role}
@@ -738,33 +635,19 @@ export default function App() {
                   <option value="other">Other</option>
                 </select>
               </label>
-              <button className="button button-primary" type="submit" disabled={joinState === 'loading'}>
-                {joinState === 'loading' ? 'Joining...' : content.nav_cta}
+              <button className="button button-primary button-full" type="submit" disabled={joinState === 'loading'}>
+                {joinState === 'loading' ? 'Joining...' : PRODUCT_COPY.navCta}
               </button>
-              {joinState === 'success' && (
-                <p className="success-text">
-                  You are in. We will reach out when the next LifeOS phase opens.
-                </p>
-              )}
-              {joinState === 'error' && (
-                <p className="error-text">
-                  That signup did not go through. If you already joined, try a different email.
-                </p>
-              )}
+              {joinState === 'success' && <p className="feedback success">You are in. This browser is now ready for questions too.</p>}
+              {joinState === 'error' && <p className="feedback error">That signup failed. If you already joined, try another email.</p>}
             </form>
           </div>
         </section>
       </main>
 
-      <footer className="footer">
-        <div>
-          <img className="brand-wordmark footer-wordmark" src={content.brand_wordmark_url} alt="LifeOS" />
-          <p>{content.footer_tagline}</p>
-        </div>
-        <button className="footer-link" onClick={() => sectionScroll('top')}>
-          Back to top
-          <UserRound size={16} />
-        </button>
+      <footer className="page-footer">
+        <img className="footer-wordmark" src="/assets/logo-wordmark.svg" alt="LifeOS" />
+        <p>{PRODUCT_COPY.footer}</p>
       </footer>
     </div>
   );
