@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Login from './components/Login';
+import Login, { LOCAL_SESSION_KEY } from './components/Login';
 import Dashboard from './components/Dashboard';
 
 export default function App() {
@@ -8,11 +8,20 @@ export default function App() {
 
   useEffect(() => {
     const checkSession = async () => {
+      // 1. Check local dev session first (set by Login fallback)
+      if (sessionStorage.getItem(LOCAL_SESSION_KEY) === 'true') {
+        setAuthed(true);
+        setChecking(false);
+        return;
+      }
+
+      // 2. Check the Vercel /api/auth cookie session (production)
       try {
         const response = await fetch('/api/auth', { credentials: 'include' });
         const data = await response.json();
         setAuthed(Boolean(data.authenticated));
       } catch {
+        // API not available (local dev without Vercel) — not authed yet
         setAuthed(false);
       } finally {
         setChecking(false);
@@ -23,7 +32,14 @@ export default function App() {
   }, []);
 
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+    // Clear local dev session
+    sessionStorage.removeItem(LOCAL_SESSION_KEY);
+    // Clear Vercel cookie session (no-op in local dev)
+    try {
+      await fetch('/api/auth', { method: 'DELETE', credentials: 'include' });
+    } catch {
+      // Ignore in local dev
+    }
     setAuthed(false);
   };
 

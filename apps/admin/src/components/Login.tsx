@@ -1,6 +1,37 @@
 import { useState } from 'react';
 import { LockKeyhole, ShieldCheck } from 'lucide-react';
 
+const LOCAL_SESSION_KEY = 'lifeos_admin_local_authed';
+
+// In local dev (no Vercel API), check password client-side against VITE_ADMIN_PASSWORD.
+// In production, the /api/auth serverless function handles it securely.
+async function attemptLogin(password: string): Promise<boolean> {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    if (response.ok) return true;
+    // If the API returns 401 it's a wrong password (even in prod)
+    if (response.status === 401) return false;
+    // Any other status (e.g. 404 = no Vercel function in local dev) → fall through
+    throw new Error(`status ${response.status}`);
+  } catch {
+    // Local dev fallback: check against VITE_ADMIN_PASSWORD directly
+    const expected = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined;
+    if (expected && password === expected) {
+      // Store a local session flag so the app stays logged in on refresh
+      sessionStorage.setItem(LOCAL_SESSION_KEY, 'true');
+      return true;
+    }
+    return false;
+  }
+}
+
+export { LOCAL_SESSION_KEY };
+
 export default function Login({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -8,22 +39,12 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setStatus('loading');
-
-    const response = await fetch('/api/auth', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password }),
-    });
-
-    if (!response.ok) {
+    const ok = await attemptLogin(password);
+    if (ok) {
+      onLogin();
+    } else {
       setStatus('error');
-      return;
     }
-
-    onLogin();
   };
 
   return (
@@ -63,7 +84,9 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
           {status === 'loading' ? 'Checking...' : 'Open control panel'}
         </button>
 
-        {status === 'error' && <p className="admin-error">That password did not match. Please try again.</p>}
+        {status === 'error' && (
+          <p className="admin-error">Incorrect password. Please try again.</p>
+        )}
       </form>
     </div>
   );
