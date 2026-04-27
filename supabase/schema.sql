@@ -246,7 +246,7 @@ values
   ('waitlist_body', 'Join the founding list for launch updates, beta access, and roadmap drops.'),
   ('footer_tagline', 'Built for disciplined students, founders, creators, and builders.'),
   ('brand_reply_name', 'LifeOS Team'),
-  ('reply_logo_url', '/assets/logo-mark.svg'),
+  ('reply_logo_url', '/assets/logo-mark.jpg'),
   ('brand_wordmark_url', '/assets/logo-wordmark.svg')
 on conflict (key) do nothing;
 
@@ -260,7 +260,7 @@ select
   'aarav@example.com',
   true,
   'LifeOS Team',
-  '/assets/logo-mark.svg',
+  '/assets/logo-mark.jpg',
   'Students are a key launch audience, but the product is being designed for anyone who wants structured execution, proof, and social motivation.',
   now(),
   array['launch', 'audience']

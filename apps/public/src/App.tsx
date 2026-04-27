@@ -36,7 +36,7 @@ const DEFAULT_CONTENT = {
     'Join the founding list for launch updates, beta access, and roadmap drops.',
   footer_tagline: 'Built for disciplined students, founders, creators, and builders.',
   brand_reply_name: 'LifeOS Team',
-  reply_logo_url: '/assets/logo-mark.svg',
+  reply_logo_url: '/assets/logo-mark.jpg',
   brand_wordmark_url: '/assets/logo-wordmark.svg',
 };
 
@@ -155,9 +155,11 @@ function Background() {
 function Navbar({
   activeSection,
   ctaLabel,
+  wordmarkUrl,
 }: {
   activeSection: string;
   ctaLabel: string;
+  wordmarkUrl: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -168,8 +170,8 @@ function Navbar({
           event.preventDefault();
           sectionScroll('top');
         }}>
-          <img className="brand-mark" src="/assets/logo-mark.svg" alt="LifeOS" />
-          <img className="brand-wordmark" src="/assets/logo-wordmark.png" alt="LifeOS" />
+          <img className="brand-mark" src="/assets/logo-mark.jpg" alt="LifeOS" />
+          <img className="brand-wordmark" src={wordmarkUrl} alt="LifeOS" />
         </a>
 
         <div className="nav-center">
@@ -386,7 +388,7 @@ export default function App() {
   return (
     <div className="page-shell" id="top">
       <Background />
-      <Navbar activeSection={activeSection} ctaLabel={content.nav_cta} />
+      <Navbar activeSection={activeSection} ctaLabel={content.nav_cta} wordmarkUrl={content.brand_wordmark_url} />
 
       <main>
         <section className="hero-section">
@@ -584,9 +586,12 @@ export default function App() {
                   )}
                 </>
               ) : (
-                <p className="thread-body">
-                  The public Q&amp;A stream will appear here as soon as visitors start asking questions.
-                </p>
+                <div className="empty-thread">
+                  <p className="thread-body">
+                    The public Q&amp;A stream will appear here as soon as visitors start asking questions.
+                  </p>
+                  <span className="empty-thread-note">First public posts will appear here for everyone.</span>
+                </div>
               )}
             </div>
 
@@ -606,7 +611,7 @@ export default function App() {
                       <strong>{registeredVisitor.name}</strong>
                       <span>{registeredVisitor.email}</span>
                     </div>
-                    <p>Registered in this browser. You can post directly now.</p>
+                    <p>Registered in this browser. You can post directly.</p>
                   </div>
                 ) : (
                   <div className="registration-banner">

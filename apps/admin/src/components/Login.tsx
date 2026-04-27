@@ -30,7 +30,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     <div className="login-shell">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-brand">
-          <img src="/assets/logo-mark.svg" alt="LifeOS" />
+          <img src="/assets/logo-mark.jpg" alt="LifeOS" />
           <div>
             <strong>LifeOS Waitlist</strong>
             <span>Admin control panel</span>

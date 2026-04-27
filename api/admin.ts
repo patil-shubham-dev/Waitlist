@@ -180,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .update({
           admin_response: adminResponse,
           admin_name: content.brand_reply_name || 'LifeOS Team',
-          admin_avatar_url: content.reply_logo_url || '/assets/logo-mark.svg',
+          admin_avatar_url: content.reply_logo_url || '/assets/logo-mark.jpg',
           admin_responded_at: new Date().toISOString(),
           status,
           is_featured: isFeatured,
