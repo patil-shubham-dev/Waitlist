@@ -135,15 +135,10 @@ function sectionScroll(id: string) {
   }
   
   const target = document.getElementById(id);
-  const navbar = document.querySelector('.navbar-shell');
-
   if (target) {
-    const navbarHeight = navbar instanceof HTMLElement ? navbar.offsetHeight : 72;
-    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - (navbarHeight - 4);
-
-    window.scrollTo({
-      top: targetPosition,
-      behavior: 'smooth'
+    target.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
     });
   }
 }

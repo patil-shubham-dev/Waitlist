@@ -61,6 +61,7 @@ body {
   font-family: "Gotham", "Inter", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  -webkit-overflow-scrolling: touch;
 }
 
 img {
@@ -1289,12 +1290,7 @@ section {
 }
 
 @media (max-width: 768px) {
-  html {
-    scroll-snap-type: y proximity;
-  }
-
   section {
-    scroll-snap-align: start;
     scroll-margin-top: 72px;
   }
 }
