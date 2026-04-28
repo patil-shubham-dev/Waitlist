@@ -691,7 +691,7 @@ function App() {
                                 <div className="feed-user-details">
                                   <div className="feed-header-line">
                                     <span className="feed-author">LifeOS Team</span>
-                                    <span className="feed-badge-official">Official Reply</span>
+                                    <span className="official-label">· Official</span>
                                   </div>
                                 </div>
                               </div>
