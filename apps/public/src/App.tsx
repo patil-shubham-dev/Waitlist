@@ -17,6 +17,7 @@ import {
   Target,
   Trophy,
   X,
+  Send,
 } from 'lucide-react';
 import { supabase, type Suggestion } from './lib/supabase';
 import { useVisitTracker } from './hooks/useVisitTracker';
@@ -322,6 +323,7 @@ function App() {
     content: '',
   });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [showFullInput, setShowFullInput] = useState(false);
 
   useEffect(() => {
     setRegisteredVisitor(readVisitorCookie());
@@ -431,8 +433,13 @@ function App() {
     }
 
     setQuestionState('success');
-    setQuestions((current) => [data as Suggestion, ...current].slice(0, 6));
+    setQuestions((current) => [data as Suggestion, ...current]);
     setQuestionForm({ title: '', content: '' });
+    
+    // Auto-hide success message after 5 seconds to allow more comments
+    setTimeout(() => {
+      if (questionState === 'success') setQuestionState('idle');
+    }, 5000);
   };
 
   return (
@@ -555,7 +562,7 @@ function App() {
             <p>{PRODUCT_COPY.questionsBody}</p>
           </div>
 
-          <div className="questions-layout">
+          <div className="questions-layout desktop-only">
             <div className="question-column">
               <article className="product-card featured-card">
                 <div className="card-topline">
@@ -686,6 +693,98 @@ function App() {
                 </p>
               )}
             </form>
+          </div>
+
+          {/* New Instagram-style Comments Widget (MOBILE ONLY) */}
+          <div className="mobile-only mobile-questions-widget">
+            <div className="comments-feed">
+              {questions.map((q) => (
+                <div key={q.id} className="comment-thread">
+                  <div className="comment-item">
+                    <img src={q.author_avatar_url || '/assets/default-avatar.svg'} alt={q.author_name} className="comment-avatar" />
+                    <div className="comment-body">
+                      <div className="comment-meta">
+                        <span className="comment-author">{q.author_name || 'Anonymous'}</span>
+                        <span className="comment-time">{formatRelativeDate(q.created_at)}</span>
+                      </div>
+                      <p className="comment-text">{q.content}</p>
+                      {q.admin_response && (
+                        <div className="comment-reply">
+                          <img src={q.admin_avatar_url || '/assets/logo-mark.jpg'} alt="Team" className="comment-avatar-small" />
+                          <div className="comment-body">
+                            <div className="comment-meta">
+                              <span className="comment-author">LifeOS Team</span>
+                              <span className="badge-official">Official Reply</span>
+                            </div>
+                            <p className="comment-text">{q.admin_response}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="comment-input-area">
+              {questionState === 'success' ? (
+                <div className="post-confirmation animate-fade-in">
+                  <div className="conf-icon"><Sparkles size={24} /></div>
+                  <div className="conf-text">
+                    <h3>You're in 🚀</h3>
+                    <p>We’ve got you — check your email soon for registration and early access details.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="input-bar-container">
+                  {!registeredVisitor ? (
+                    <div className="instagram-input-bar" onClick={() => sectionScroll('waitlist')}>
+                      <span className="placeholder-text">Ask a question...</span>
+                      <button className="register-btn">Register to post</button>
+                    </div>
+                  ) : (
+                    <div className={`comment-composer-expanded ${showFullInput ? 'show' : ''}`}>
+                      {!showFullInput ? (
+                        <div className="instagram-input-bar active" onClick={() => setShowFullInput(true)}>
+                          <span className="placeholder-text">Ask {registeredVisitor.name.split(' ')[0]}...</span>
+                          <MessageCircle size={18} className="icon-subtle" />
+                        </div>
+                      ) : (
+                        <form className="unified-comment-form" onSubmit={handleQuestionSubmit}>
+                          <div className="form-header">
+                            <span>Post to the wall</span>
+                            <button type="button" onClick={() => setShowFullInput(false)} className="close-mini"><X size={16} /></button>
+                          </div>
+                          <input
+                            className="mini-field"
+                            value={questionForm.title}
+                            onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
+                            placeholder="Title (optional)"
+                          />
+                          <textarea
+                            className="main-comment-input"
+                            value={questionForm.content}
+                            onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
+                            placeholder="Write your message..."
+                            required
+                            rows={3}
+                            autoFocus
+                          />
+                          <button 
+                            type="submit" 
+                            className="button button-primary button-full" 
+                            disabled={questionState === 'loading' || !questionForm.content.trim()}
+                          >
+                            {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
+                            <Send size={16} />
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
