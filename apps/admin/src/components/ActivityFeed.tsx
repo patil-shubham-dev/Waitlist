@@ -58,26 +58,30 @@ export default function ActivityFeed() {
   }, []);
 
   return (
-    <article className="panel activity-feed">
+    <div className="panel activity-feed">
       <div className="panel-header">
-        <div>
+        <h2>System Activity</h2>
+        <p>Live stream of waitlist and community events</p>
+      </div>
 
-      <div className="activity-feed">
-        {events.length === 0 ? (
-          <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>Waiting for activity...</p>
+      <div className="activity-list">
+        {activities.length === 0 ? (
+          <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>Waiting for system activity...</p>
         ) : (
-          events.map(event => (
-            <div key={event.id} className="activity-item">
+          activities.map(activity => (
+            <div key={activity.id} className="activity-item">
               <div className="activity-icon">
-                {event.type === 'signup' && <UserPlus size={18} />}
-                {event.type === 'question' && <MessageCircle size={18} />}
-                {event.type === 'admin_reply' && <ShieldCheck size={18} />}
-                {event.type === 'phase_change' && <Zap size={18} />}
+                {activity.type === 'signup' && <UserPlus size={18} />}
+                {activity.type === 'question' && <MessageCircle size={18} />}
+                {activity.type === 'admin_reply' && <ShieldCheck size={18} />}
+                {activity.type === 'roadmap_update' && <Zap size={18} />}
               </div>
               <div className="activity-content">
-                <div className="activity-title">{event.title}</div>
-                <div className="activity-detail">{event.detail}</div>
-                <div className="activity-time">{new Date(event.timestamp).toLocaleTimeString()}</div>
+                <div className="activity-title">
+                  <strong>{activity.user_name || 'System'}</strong>
+                </div>
+                <div className="activity-detail">{activity.content}</div>
+                <div className="activity-time">{formatRelativeTime(activity.created_at)}</div>
               </div>
             </div>
           ))

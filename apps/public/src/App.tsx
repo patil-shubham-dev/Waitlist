@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
@@ -201,15 +201,6 @@ function readVisitorCookie() {
   }
 }
 
-function formatRelativeDate(date: string) {
-  const delta = Date.now() - new Date(date).getTime();
-  const minutes = Math.max(1, Math.floor(delta / 60000));
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 function Navbar({
   activeSection,
@@ -623,7 +614,7 @@ function App() {
                           />
                           <div className="feed-user-details">
                             <span className="feed-author">
-                              {formatDisplayName(q.email || q.author_email, q.author_name || q.name)}
+                              {formatDisplayName(q.email, q.author_name || q.name || undefined)}
                             </span>
                             <span className="feed-time">{formatRelativeDate(q.created_at)}</span>
                           </div>
