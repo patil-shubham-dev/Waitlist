@@ -198,10 +198,12 @@ function Navbar({
   activeSection,
   ctaLabel,
   compact,
+  onNavClick,
 }: {
   activeSection: string;
   ctaLabel: string;
   compact: boolean;
+  onNavClick: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -213,7 +215,7 @@ function Navbar({
           href="#top"
           onClick={(event) => {
             event.preventDefault();
-            sectionScroll('top');
+            onNavClick('top');
           }}
         >
           <img className="brand-mark" src="/assets/logo-mark.jpg" alt="LifeOS" />
@@ -225,7 +227,7 @@ function Navbar({
             <button
               key={item.id}
               className={`nav-link ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => sectionScroll(item.id)}
+              onClick={() => onNavClick(item.id)}
             >
               {item.label}
             </button>
@@ -259,7 +261,7 @@ function Navbar({
               className="mobile-menu-link"
               onClick={() => {
                 setOpen(false);
-                sectionScroll(item.id);
+                onNavClick(item.id);
               }}
             >
               {item.label}
@@ -272,7 +274,7 @@ function Navbar({
             className="button button-primary button-full"
             onClick={() => {
               setOpen(false);
-              sectionScroll('waitlist');
+              onNavClick('waitlist');
             }}
           >
             {ctaLabel}
@@ -362,6 +364,7 @@ function App() {
           .from('suggestions')
           .select('*')
           .eq('is_public', true)
+          .order('is_featured', { ascending: false })
           .order('created_at', { ascending: true })
           .limit(50),
         supabase
@@ -489,9 +492,19 @@ function App() {
     }, 5000);
   };
 
+  const handleNavClick = (id: string) => {
+    setActiveSection(id);
+    sectionScroll(id);
+  };
+
   return (
     <div className="page-shell" id="top">
-      <Navbar activeSection={activeSection} ctaLabel={PRODUCT_COPY.navCta} compact={navCompact} />
+      <Navbar 
+        activeSection={activeSection} 
+        ctaLabel={PRODUCT_COPY.navCta} 
+        compact={navCompact} 
+        onNavClick={handleNavClick}
+      />
 
       <main className="page-main">
         <section className="hero-section">
@@ -635,8 +648,6 @@ function App() {
                             <div className="feed-user-details">
                               <div className="feed-header-line">
                                 <span className="feed-author">{name}</span>
-                                <span className="feed-dot-separator">·</span>
-                                <span className="feed-time">{formatRelativeDate(q.created_at)}</span>
                               </div>
                             </div>
                             {q.is_featured && <span className="feed-badge-featured">Featured</span>}
@@ -719,7 +730,7 @@ function App() {
                                 onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
                                 placeholder="Your question or feedback..."
                                 required
-                                rows={6}
+                                rows={3}
                               />
                               <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
                                 {questionForm.content.length}/280
