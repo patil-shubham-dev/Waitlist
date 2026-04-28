@@ -346,15 +346,15 @@ function App() {
     if (!container) return;
 
     const handleWheel = (e: WheelEvent) => {
-      const atTop = container.scrollTop === 0;
-      const atBottom = Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 1;
+      const atTop = container.scrollTop <= 0;
+      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
 
       if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-        // Allow page scroll
+        // Allow page scroll to take over
         return;
       }
 
-      // Stop propagation to prevent page from scrolling while inside the box
+      // Stop propagation to ensure we only scroll the box when it can be scrolled
       e.stopPropagation();
     };
 
@@ -366,11 +366,10 @@ function App() {
     const handleTouchMove = (e: TouchEvent) => {
       const currentY = e.touches[0].clientY;
       const diff = startY - currentY;
-      const atTop = container.scrollTop === 0;
-      const atBottom = Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 1;
+      const atTop = container.scrollTop <= 0;
+      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
 
       if ((atTop && diff < 0) || (atBottom && diff > 0)) {
-        // Allow page scroll
         return;
       }
 
