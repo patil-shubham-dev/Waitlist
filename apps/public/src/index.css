@@ -696,28 +696,69 @@ button.primary:hover,
 
 @media (max-width: 768px) {
   .questions-container-unified {
+    padding: 24px 0;
     margin: 0 -16px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
   }
   
   .questions-dual-pane {
     flex-direction: column;
     height: auto;
+    gap: 20px;
   }
 
   .feed-view-pane {
     flex: none;
-    height: 60vh;
+    height: 65vh; /* Fixed height widget */
+    margin: 0 16px;
+    padding: 16px;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
     border-right: none;
-    border-bottom: 1px solid var(--border);
+    scroll-behavior: smooth;
+  }
+
+  .feed-list {
+    gap: 20px;
+  }
+
+  .feed-item-thread {
+    gap: 4px;
+  }
+
+  .feed-bubble {
+    background: #f9f9f9;
+    padding: 12px 14px;
+    border-radius: 12px 16px 16px 16px;
+    border: none;
+    box-shadow: none;
+    max-width: 100%;
   }
 
   .feed-control-pane {
     flex: none;
+    margin: 0 16px;
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  }
+
+  .pane-inner {
+    padding: 20px;
+  }
+
+  .pane-control-title {
+    font-size: 14px;
+  }
+
+  .pane-helper-text {
+    font-size: 11px;
+    margin-bottom: 12px;
   }
 }
+
 
 /* Custom Scrollbar */
 .feed-view-pane::-webkit-scrollbar {
