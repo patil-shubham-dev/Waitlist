@@ -42,7 +42,7 @@ export default function ActivityFeed() {
       ...(questions.data || []).map(q => ({
         id: `q-${q.id}`,
         type: 'question' as const,
-        content: `asked: "${q.content.substring(0, 40)}${q.content.length > 40 ? '...' : ''}"`,
+        content: `asked: "${(q.content || '').substring(0, 40)}${(q.content || '').length > 40 ? '...' : ''}"`,
         user_name: q.name,
         created_at: q.created_at
       }))

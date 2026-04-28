@@ -329,6 +329,11 @@ function App() {
     setRegisteredVisitor(readVisitorCookie());
   }, []);
 
+  useEffect(() => {
+    const load = async () => {
+      const [{ count }, questionsRes, roadmapRes] = await Promise.all([
+        supabase.from('waitlist').select('*', { count: 'exact', head: true }),
+        supabase
           .from('suggestions')
           .select('*')
           .eq('is_public', true)
@@ -347,7 +352,6 @@ function App() {
 
     load();
 
-    // Subscribe to roadmap changes
     const roadmapSub = supabase
       .channel('public-roadmap')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'timeline_entries' }, () => {
