@@ -315,7 +315,6 @@ function App() {
     content: '',
   });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [showFullInput, setShowFullInput] = useState(false);
   const feedRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom of feed
@@ -323,7 +322,7 @@ function App() {
     if (feedRef.current) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
     }
-  }, [questions, showFullInput]);
+  }, [questions]);
 
   useEffect(() => {
     setRegisteredVisitor(readVisitorCookie());
@@ -646,55 +645,42 @@ function App() {
                     <div className="feed-input-flex">
                       {!registeredVisitor ? (
                         <div className="feed-input-locked" onClick={() => sectionScroll('waitlist')}>
-                          <h4 className="pane-status-title">Join conversation</h4>
-                          <p className="pane-helper-text">Become a member to post your thoughts and ask questions.</p>
-                          <div className="lock-btn-full">Register</div>
+                          <h4 className="pane-status-title">Members only</h4>
+                          <p className="pane-helper-text">Register to start asking questions and join the conversation.</p>
+                          <div className="lock-btn-full">Register to post</div>
                         </div>
                       ) : (
-                        <div className={`feed-input-composer ${showFullInput ? 'expanded' : ''}`}>
-                          {!showFullInput ? (
-                            <div className="feed-input-trigger" onClick={() => setShowFullInput(true)}>
-                              <div className="user-dot" />
-                              <span className="trigger-placeholder">
-                                Ask {registeredVisitor.name.split(' ')[0]}...
-                              </span>
-                              <Send size={18} className="trigger-icon" />
+                        <div className="feed-input-composer">
+                          <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
+                            <div className="feed-form-header">
+                              <span className="form-label">Post to the wall</span>
                             </div>
-                          ) : (
-                            <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
-                              <div className="feed-form-header">
-                                <span className="form-label">New Question</span>
-                                <button type="button" onClick={() => setShowFullInput(false)} className="close-mini"><X size={16} /></button>
-                              </div>
-                              <input
-                                className="feed-field-minimal"
-                                value={questionForm.title}
-                                onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
-                                placeholder="Short topic..."
-                                autoComplete="off"
-                              />
-                              <textarea
-                                className="feed-textarea-minimal"
-                                value={questionForm.content}
-                                onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
-                                placeholder="What's on your mind?"
-                                required
-                                rows={4}
-                                autoFocus
-                              />
-                              <div className="feed-form-actions">
-                                <button 
-                                  type="submit" 
-                                  className="feed-submit-btn-full" 
-                                  disabled={questionState === 'loading' || !questionForm.content.trim()}
-                                >
-                                  {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
-                                  <Send size={16} />
-                                </button>
-                                <p className="feed-helper-nano">Public posting is final. Be productive.</p>
-                              </div>
-                            </form>
-                          )}
+                            <input
+                              className="feed-field-minimal"
+                              value={questionForm.title}
+                              onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
+                              placeholder="Topic (optional)"
+                              autoComplete="off"
+                            />
+                            <textarea
+                              className="feed-textarea-minimal"
+                              value={questionForm.content}
+                              onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
+                              placeholder="Your question or feedback..."
+                              required
+                              rows={5}
+                            />
+                            <div className="feed-form-actions">
+                              <button 
+                                type="submit" 
+                                className="button button-primary button-full" 
+                                disabled={questionState === 'loading' || !questionForm.content.trim()}
+                              >
+                                {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
+                                <Send size={16} />
+                              </button>
+                            </div>
+                          </form>
                         </div>
                       )}
                     </div>

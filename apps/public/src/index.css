@@ -652,7 +652,7 @@ button.primary:hover,
 
 /* Unified Questions Section (Chat Style) */
 .questions-container-unified {
-  max-width: 900px;
+  max-width: var(--max-width);
   margin: 0 auto;
   background: #ffffff;
   border-radius: 20px;
@@ -663,23 +663,24 @@ button.primary:hover,
 
 .questions-dual-pane {
   display: flex;
-  height: 520px; /* Reduced fixed height */
+  height: 500px; /* Reduced fixed height from 520px */
 }
 
 .feed-view-pane {
-  flex: 0 0 72%;
+  flex: 0 0 75%;
   overflow-y: auto;
-  padding: 24px;
+  overscroll-behavior: contain;
+  padding: 20px 24px;
   background: #fdfcfb;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px; /* Tighter spacing */
   scroll-behavior: smooth;
   border-right: 1px solid var(--border);
 }
 
 .feed-control-pane {
-  flex: 1;
+  flex: 0 0 25%;
   background: #ffffff;
   display: flex;
   flex-direction: column;
@@ -690,6 +691,7 @@ button.primary:hover,
   height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
 }
 
 @media (max-width: 768px) {
@@ -729,14 +731,14 @@ button.primary:hover,
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 
 .feed-item-thread {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   max-width: 100%;
 }
 
@@ -789,10 +791,22 @@ button.primary:hover,
 
 .feed-bubble {
   background: #ffffff;
-  padding: 12px 16px;
-  border-radius: 4px 16px 16px 16px;
+  padding: 10px 14px;
+  border-radius: 4px 14px 14px 14px;
   border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.feed-bubble-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.feed-bubble-content {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .featured-item .feed-bubble {
@@ -897,7 +911,8 @@ button.primary:hover,
 
 .feed-helper-nano {
   font-size: 10px;
-  color: var(--text-faint);
+  color: var(--text-secondary);
+  opacity: 0.6;
   margin-top: 10px;
   text-align: center;
 }
@@ -960,6 +975,7 @@ button.primary:hover,
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 13px;
+  margin-bottom: 4px;
 }
 
 .feed-textarea-minimal {
@@ -968,7 +984,8 @@ button.primary:hover,
   padding: 12px 14px;
   border-radius: 10px;
   font-size: 14px;
-  min-height: 100px;
+  min-height: 140px;
+  margin-bottom: 8px;
 }
 
 .feed-form-actions {

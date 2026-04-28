@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase, type TimelineEntry } from '../../lib/supabase';
-import { CheckCircle2, Clock, Calendar, Edit2, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { CheckCircle2, Clock, Calendar, Edit2, Plus, Trash2, ArrowUp, ArrowDown, X } from 'lucide-react';
 
 export default function TimelineTab() {
   const [phases, setPhases] = useState<TimelineEntry[]>([]);
