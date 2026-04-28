@@ -292,6 +292,15 @@ function App() {
   const [questions, setQuestions] = useState<Suggestion[]>([]);
   const [roadmap, setRoadmap] = useState<TimelineEntry[]>([]);
   const [isRoleOpen, setIsRoleOpen] = useState(false);
+  const [toasts, setToasts] = useState<{ id: number; message: string; type: 'success' | 'error' }[]>([]);
+
+  const addToast = (message: string, type: 'success' | 'error' = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
 
   const ROLES = [
     { value: 'student', label: 'Student' },
@@ -440,6 +449,7 @@ function App() {
     }
 
     setJoinState('success');
+    addToast("Welcome to the waitlist! We'll keep you updated.");
     setWaitlistCount((current) => current + 1);
     
     const visitor = { name: payload.name, email: payload.email, role: payload.role };
@@ -483,6 +493,7 @@ function App() {
     }
 
     setQuestionState('success');
+    addToast("Your feedback has been posted successfully.");
     setQuestions((current) => [...current, data as Suggestion]);
     setQuestionForm({ title: '', content: '' });
     
@@ -505,6 +516,15 @@ function App() {
         compact={navCompact} 
         onNavClick={handleNavClick}
       />
+
+      <div className="toast-stack">
+        {toasts.map(toast => (
+          <div key={toast.id} className="toast-item">
+            <CheckCircle2 size={18} className="toast-success-icon" />
+            <span>{toast.message}</span>
+          </div>
+        ))}
+      </div>
 
       <main className="page-main">
         <section className="hero-section">
@@ -599,6 +619,8 @@ function App() {
                 <div className="roadmap-header">
                   <span className="step-number">STEP 0{index + 1}</span>
                   <span className={`status-badge status-${item.status}`}>
+                    {item.status === 'present' && <span className="pulse-dot" />}
+                    {item.status === 'past' && <CheckCircle2 size={12} className="badge-check-icon" style={{ marginRight: '4px' }} />}
                     {item.status === 'past' ? 'Completed' : item.status === 'present' ? 'In Progress' : 'Upcoming'}
                   </span>
                 </div>
