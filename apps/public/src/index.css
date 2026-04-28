@@ -677,14 +677,14 @@ button.primary:hover,
 @media (min-width: 1024px) {
   .questions-layout {
     display: grid;
-    grid-template-columns: 58% 42%;
-    gap: 28px;
+    grid-template-columns: 2.2fr 1fr; /* increase comment space */
+    gap: 24px;
     align-items: start;
     height: auto;
   }
 }
 
-.feed-view-pane {
+.comment-window {
   overflow-y: auto;
   overscroll-behavior: auto;
   -webkit-overflow-scrolling: touch;
@@ -701,7 +701,15 @@ button.primary:hover,
   position: relative;
 }
 
-.feed-view-pane::after {
+@media (min-width: 1024px) {
+  .comment-window {
+    height: 540px; /* more space */
+    max-height: 540px;
+    overflow-y: auto;
+  }
+}
+
+.comment-window::after {
   content: "";
   position: sticky;
   bottom: -24px; /* Adjust based on padding */
@@ -714,13 +722,17 @@ button.primary:hover,
   margin-top: -32px;
 }
 
-.feed-control-pane {
+.input-panel {
   background: #ffffff;
   display: flex;
   flex-direction: column;
 }
 
-
+@media (min-width: 1024px) {
+  .input-panel {
+    max-width: 360px;
+  }
+}
 
 .pane-inner {
   padding: 24px;
@@ -742,7 +754,7 @@ button.primary:hover,
     gap: 20px;
   }
 
-  .feed-view-pane {
+  .comment-window {
     flex: none;
     height: 65vh; /* Fixed height widget */
     margin: 0 16px;
@@ -774,7 +786,7 @@ button.primary:hover,
     max-width: 100%;
   }
 
-  .feed-control-pane {
+  .input-panel {
     flex: none;
     margin: 0 16px;
     background: #ffffff;
@@ -799,29 +811,21 @@ button.primary:hover,
 
 
 /* Custom Scrollbar */
-.feed-view-pane::-webkit-scrollbar {
+.comment-window::-webkit-scrollbar {
   width: 6px;
 }
-.feed-view-pane::-webkit-scrollbar-thumb {
+.comment-window::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.08);
   border-radius: 10px;
 }
 
-.feed-list {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  width: 100%;
-  max-width: 600px;
-  margin: 0; /* Left align inside pane */
-}
-
-
-.feed-item-thread {
+.comment-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
   max-width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
 }
 
 .animate-message-in {
@@ -840,17 +844,41 @@ button.primary:hover,
   gap: 10px;
 }
 
-.comment-avatar {
+.avatar {
   width: 32px;
   height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  max-width: 32px;
-  max-height: 32px;
   border-radius: 50%;
-  object-fit: cover;
+  background: #f97316;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  border: 1px solid var(--border);
+}
+
+.avatar-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f97316;
+  padding: 5px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 1024px) {
+  .avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  
+  .avatar-logo {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
 }
 
 
@@ -1153,6 +1181,12 @@ button.primary:hover,
   font-size: 14px;
   min-height: 140px;
   margin-bottom: 8px;
+}
+
+@media (min-width: 1024px) {
+  .feed-textarea-minimal {
+    min-height: 110px; /* reduced */
+  }
 }
 
 .textarea-wrapper {

@@ -50,13 +50,9 @@ function formatDisplayName(email?: string, name?: string) {
 }
 
 function getInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function getAvatarColor(name: string) {
@@ -620,8 +616,8 @@ function App() {
           </div>
 
           <div className="questions-container-unified">
-            <div className="questions-dual-pane">
-              <div className="feed-view-pane" ref={feedRef}>
+            <div className="questions-dual-pane questions-layout">
+              <div className="comment-window" ref={feedRef}>
                 {questions.length === 0 ? (
                   <div className="feed-empty-state">
                     <MessageSquareText size={48} strokeWidth={1} />
@@ -632,13 +628,11 @@ function App() {
                     {questions.map((q) => {
                       const name = formatDisplayName(q.email, q.author_name || q.name || undefined);
                       return (
-                        <div key={q.id} className={`feed-item-thread ${q.is_featured ? 'featured-item' : ''} animate-message-in`}>
+                        <div key={q.id} className={`comment-card ${q.is_featured ? 'featured-item' : ''} animate-message-in`}>
                           <div className="feed-user-meta">
-                            <img 
-                              src="/favicon.svg" 
-                              alt="user avatar" 
-                              className="comment-avatar" 
-                            />
+                            <div className="avatar" style={{ backgroundColor: getAvatarColor(name) }}>
+                              {getInitials(name)}
+                            </div>
                             <div className="feed-user-details">
                               <div className="feed-header-line">
                                 <span className="feed-author">{name}</span>
@@ -660,7 +654,7 @@ function App() {
                                 <img 
                                   src="/favicon.svg" 
                                   alt="official avatar" 
-                                  className="comment-avatar" 
+                                  className="avatar-logo" 
                                 />
                                 <div className="feed-user-details">
                                   <div className="feed-header-line">
@@ -679,7 +673,7 @@ function App() {
                 )}
               </div>
 
-              <div className="feed-control-pane">
+              <div className="input-panel">
                 <div className="pane-inner">
                   {questionState === 'success' ? (
                     <div className="feed-post-confirmation">
@@ -700,11 +694,9 @@ function App() {
                           <div className="feed-user-identity">
                             <span className="identity-label">Posting as</span>
                             <div className="identity-card">
-                              <img 
-                                src="/favicon.svg" 
-                                alt="user avatar" 
-                                className="comment-avatar" 
-                              />
+                              <div className="avatar" style={{ backgroundColor: getAvatarColor(registeredVisitor.name) }}>
+                                {getInitials(registeredVisitor.name)}
+                              </div>
                               <span className="identity-name">{registeredVisitor.name}</span>
                             </div>
                           </div>
