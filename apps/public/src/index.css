@@ -1893,7 +1893,15 @@ select option {
   }
 
   .field {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+  }
+
+  .waitlist-title {
+    margin-bottom: 8px;
+  }
+
+  .waitlist-desc {
+    margin-bottom: 16px;
   }
 }
 
