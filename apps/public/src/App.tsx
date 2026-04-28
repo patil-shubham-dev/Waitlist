@@ -127,33 +127,6 @@ const LOOP_CARDS = [
   },
 ];
 
-const ROADMAP_CARDS = [
-  {
-    status: 'Past',
-    title: 'Foundation',
-    body: 'Core infrastructure, waitlist flow, and the first task-driven product direction.',
-    points: ['Task system', 'Realtime data layer', 'Launch-ready web stack'],
-  },
-  {
-    status: 'Past',
-    title: 'Security and integrity',
-    body: 'Validation rules, anti-cheat thinking, and system safety before scale.',
-    points: ['Proof review model', 'Integrity controls', 'Safer admin operations'],
-  },
-  {
-    status: 'Present',
-    title: 'AI proof system',
-    body: 'The current focus: make completed work visible, reviewable, and trusted.',
-    points: ['Proof submission', 'Confidence checks', 'Verified progress'],
-  },
-  {
-    status: 'Future',
-    title: 'Gamification and social layer',
-    body: 'Expand into streaks, XP, community pressure, and the public beta network.',
-    points: ['XP and streak engine', 'Communities and sharing', 'Public beta launch'],
-  },
-];
-
 const VISITOR_COOKIE = 'lifeos_visitor';
 
 function sectionScroll(id: string) {
@@ -296,6 +269,7 @@ function App() {
 
   const [waitlistCount, setWaitlistCount] = useState(0);
   const [questions, setQuestions] = useState<Suggestion[]>([]);
+  const [roadmap, setRoadmap] = useState<TimelineEntry[]>([]);
   const [isRoleOpen, setIsRoleOpen] = useState(false);
 
   const ROLES = [
@@ -355,23 +329,35 @@ function App() {
     setRegisteredVisitor(readVisitorCookie());
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      const [{ count }, questionsRes] = await Promise.all([
-        supabase.from('waitlist').select('*', { count: 'exact', head: true }),
-        supabase
           .from('suggestions')
           .select('*')
           .eq('is_public', true)
           .order('created_at', { ascending: true })
           .limit(50),
+        supabase
+          .from('timeline_entries')
+          .select('*')
+          .order('sort_order', { ascending: true })
       ]);
 
       setWaitlistCount(count ?? 0);
       setQuestions((questionsRes.data ?? []) as Suggestion[]);
+      setRoadmap((roadmapRes.data ?? []) as TimelineEntry[]);
     };
 
     load();
+
+    // Subscribe to roadmap changes
+    const roadmapSub = supabase
+      .channel('public-roadmap')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'timeline_entries' }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(roadmapSub);
+    };
   }, []);
 
   useEffect(() => {
@@ -566,19 +552,19 @@ function App() {
             <p>{PRODUCT_COPY.roadmapBody}</p>
           </div>
           <div className="card-grid card-grid-2 roadmap-grid">
-            {ROADMAP_CARDS.map((item, index) => (
-              <article className="product-card roadmap-card" key={item.title}>
+            {roadmap.map((item, index) => (
+              <article className="product-card roadmap-card" key={item.id}>
                 <span className="step-number">0{index + 1}</span>
                 <div className="card-topline">
-                  <span className={`status-chip status-${item.status.toLowerCase()}`}>{item.status}</span>
+                  <span className={`status-chip status-${item.status}`}>{item.status}</span>
                   <span className="status-meaning">
-                    {item.status === 'Past' ? 'Shipped' : item.status === 'Present' ? 'In progress' : 'Planned'}
+                    {item.status === 'past' ? 'Shipped' : item.status === 'present' ? 'In progress' : 'Planned'}
                   </span>
                 </div>
                 <h3>{item.title}</h3>
-                <p>{item.body}</p>
+                <p>{item.description}</p>
                 <div className="point-list">
-                  {item.points.map((point) => (
+                  {item.items?.map((point) => (
                     <span key={point}>{point}</span>
                   ))}
                 </div>
