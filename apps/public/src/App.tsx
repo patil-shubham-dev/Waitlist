@@ -632,12 +632,11 @@ function App() {
                       return (
                         <div key={q.id} className={`feed-item-thread ${q.is_featured ? 'featured-item' : ''} animate-message-in`}>
                           <div className="feed-user-meta">
-                            <div 
-                              className="feed-avatar-initials"
-                              style={{ backgroundColor: getAvatarColor(name) }}
-                            >
-                              {getInitials(name)}
-                            </div>
+                            <img 
+                              src="/favicon.svg" 
+                              alt="user avatar" 
+                              className="comment-avatar" 
+                            />
                             <div className="feed-user-details">
                               <div className="feed-header-line">
                                 <span className="feed-author">{name}</span>
@@ -656,7 +655,11 @@ function App() {
                           {q.admin_response && (
                             <div className="feed-admin-reply">
                               <div className="feed-user-meta min">
-                                <img src={q.admin_avatar_url || '/assets/logo-mark.jpg'} alt="" className="feed-avatar-tiny" />
+                                <img 
+                                  src="/favicon.svg" 
+                                  alt="official avatar" 
+                                  className="comment-avatar" 
+                                />
                                 <div className="feed-user-details">
                                   <div className="feed-header-line">
                                     <span className="feed-author">LifeOS Team</span>
@@ -691,24 +694,23 @@ function App() {
                           <div className="lock-btn-full">Register to post</div>
                         </div>
                       ) : (
-                        <div className="feed-input-composer">
+                        <div className="feed-input-composer question-box">
                           <div className="feed-user-identity">
                             <span className="identity-label">Posting as</span>
                             <div className="identity-card">
-                              <div 
-                                className="feed-avatar-initials sm"
-                                style={{ backgroundColor: getAvatarColor(registeredVisitor.name) }}
-                              >
-                                {getInitials(registeredVisitor.name)}
-                              </div>
+                              <img 
+                                src="/favicon.svg" 
+                                alt="user avatar" 
+                                className="comment-avatar" 
+                              />
                               <span className="identity-name">{registeredVisitor.name}</span>
                             </div>
                           </div>
 
                           <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
-                            <div className="feed-form-header">
-                              <h3 className="pane-control-title">Ask a question or share feedback</h3>
-                              <p className="pane-helper-text">Be specific. Clear questions get better answers.</p>
+                            <div className="input-header">
+                              <h3>Ask a question or share feedback</h3>
+                              <p>Be specific. Clear questions get better answers.</p>
                             </div>
                             <input
                               className="feed-field-minimal"
