@@ -738,25 +738,27 @@ function App() {
                               <h3>Ask a question or share feedback</h3>
                               <p>Be specific. Clear questions get better answers.</p>
                             </div>
-                            <input
-                              className="feed-field-minimal"
-                              value={questionForm.title}
-                              onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value.substring(0, 50) }))}
-                              placeholder="Topic (optional)"
-                              autoComplete="off"
-                            />
-                            <div className="textarea-wrapper">
-                              <textarea
-                                className="feed-textarea-minimal"
-                                value={questionForm.content}
-                                onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
-                                placeholder="Your question or feedback..."
-                                required
-                                rows={3}
+                            <div className="feed-inputs-main">
+                              <input
+                                className="feed-field-minimal"
+                                value={questionForm.title}
+                                onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value.substring(0, 50) }))}
+                                placeholder="Topic (optional)"
+                                autoComplete="off"
                               />
-                              <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
-                                {questionForm.content.length}/280
-                              </span>
+                              <div className="textarea-wrapper">
+                                <textarea
+                                  className="feed-textarea-minimal"
+                                  value={questionForm.content}
+                                  onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
+                                  placeholder="Your question or feedback..."
+                                  required
+                                  rows={3}
+                                />
+                                <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
+                                  {questionForm.content.length}/280
+                                </span>
+                              </div>
                             </div>
                             <div className="feed-form-actions">
                               <button 
