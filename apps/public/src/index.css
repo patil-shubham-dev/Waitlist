@@ -145,6 +145,14 @@ a {
     max-width: 520px; /* ENFORCE 2 LINES */
     line-height: 1.1;
   }
+
+  .waitlist-subtext {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #6b7280; /* muted gray */
+    max-width: 420px;
+    line-height: 1.6;
+  }
 }
 
 .brand-wordmark {

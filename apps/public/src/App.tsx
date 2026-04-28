@@ -823,6 +823,12 @@ function App() {
                   : PRODUCT_COPY.ctaBody
                 }
               </p>
+              {registeredVisitor && (
+                <p className="waitlist-subtext desktop-only">
+                  Start building your proof system early.<br/>
+                  LifeOS rewards execution — not intentions.
+                </p>
+              )}
               {!registeredVisitor && <p className="waitlist-note">{PRODUCT_COPY.ctaTrust}</p>}
             </div>
 
