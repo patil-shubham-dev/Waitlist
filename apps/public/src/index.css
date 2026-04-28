@@ -1678,7 +1678,8 @@ select option {
   }
 
   .field {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
+    gap: 2px;
   }
 
   input,
@@ -1761,21 +1762,21 @@ select option {
 /* Waitlist Confirmation (Reward State) */
 .waitlist-form-container {
   position: relative;
-  min-height: 480px;
+  min-height: auto;
   display: flex;
   align-items: flex-start;
 }
 
 .registration-reward-block {
   width: 100%;
-  padding: 48px;
+  padding: 32px;
   background: white;
   border-radius: 24px;
   border: 1px solid var(--border);
   box-shadow: 0 10px 40px rgba(0,0,0,0.03);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .reward-icon-shell {
@@ -1875,28 +1876,32 @@ select option {
 
 @media (max-width: 768px) {
   .registration-reward-block {
-    padding: 32px 24px;
-    gap: 20px;
+    padding: 24px 20px;
+    gap: 12px;
   }
   
   .reward-title {
-    font-size: 24px;
+    font-size: 22px;
   }
   
   .reward-main-msg {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .waitlist-form-container {
-    min-height: 400px;
+    min-height: auto;
+  }
+
+  .field {
+    margin-bottom: 12px;
   }
 }
 
 /* Footer System */
 .footer {
   width: min(var(--max-width), calc(100vw - 32px));
-  margin: 24px auto 0; /* reduced from 40px */
-  padding: 48px 0 64px;
+  margin: 0 auto;
+  padding: 32px 0 64px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -1906,8 +1911,8 @@ select option {
 }
 
 .waitlist-section {
-  padding-bottom: 24px; /* reduced from 40px */
-  margin-bottom: 24px; /* reduced gap */
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 
@@ -1975,8 +1980,8 @@ select option {
     justify-content: space-between;
     align-items: center; /* Vertically center branding relative to content */
     text-align: right;
-    padding: 64px 0 80px;
-    margin-top: 24px; /* reduce top margin */
+    padding: 48px 0 64px;
+    margin-top: 0;
     gap: 40px;
   }
 
