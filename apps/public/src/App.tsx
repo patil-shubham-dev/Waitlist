@@ -22,6 +22,33 @@ import {
 import { supabase, type Suggestion } from './lib/supabase';
 import { useVisitTracker } from './hooks/useVisitTracker';
 
+function formatRelativeDate(date: string) {
+  const delta = Date.now() - new Date(date).getTime();
+  const minutes = Math.floor(delta / 1000 / 60);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function formatDisplayName(email?: string, name?: string) {
+  if (name && name.trim() && name.trim() !== 'Anonymous') return name;
+  if (!email) return 'User';
+  try {
+    const handle = email.split('@')[0];
+    const cleaned = handle.replace(/[0-9]/g, '').replace(/[._-]/g, ' ').trim();
+    if (!cleaned) return 'User';
+    return cleaned
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  } catch {
+    return 'User';
+  }
+}
+
 const NAV_ITEMS = [
   { id: 'why', label: 'Why LifeOS' },
   { id: 'loop', label: 'Core Loop' },
@@ -324,6 +351,14 @@ function App() {
   });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [showFullInput, setShowFullInput] = useState(false);
+  const feedRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of feed
+  useEffect(() => {
+    if (feedRef.current) {
+      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    }
+  }, [questions, showFullInput]);
 
   useEffect(() => {
     setRegisteredVisitor(readVisitorCookie());
@@ -337,9 +372,8 @@ function App() {
           .from('suggestions')
           .select('*')
           .eq('is_public', true)
-          .order('is_featured', { ascending: false })
-          .order('created_at', { ascending: false })
-          .limit(6),
+          .order('created_at', { ascending: true })
+          .limit(50),
       ]);
 
       setWaitlistCount(count ?? 0);
@@ -419,8 +453,10 @@ function App() {
 
     setQuestionState('loading');
 
+    const derivedName = formatDisplayName(registeredVisitor.email, registeredVisitor.name);
     const payload = {
-      name: registeredVisitor.name.trim() || null,
+      author_name: derivedName,
+      author_email: registeredVisitor.email,
       email: registeredVisitor.email.trim().toLowerCase(),
       title: questionForm.title.trim() || null,
       content: questionForm.content.trim(),
@@ -438,7 +474,7 @@ function App() {
     }
 
     setQuestionState('success');
-    setQuestions((current) => [data as Suggestion, ...current]);
+    setQuestions((current) => [...current, data as Suggestion]);
     setQuestionForm({ title: '', content: '' });
     
     // Auto-hide success message after 5 seconds to allow more comments
@@ -567,228 +603,120 @@ function App() {
             <p>{PRODUCT_COPY.questionsBody}</p>
           </div>
 
-          <div className="questions-layout desktop-only">
-            <div className="question-column">
-              <article className="product-card featured-card">
-                <div className="card-topline">
-                  <span>Featured thread</span>
-                  <MessageSquareText size={16} />
-                </div>
-                <h3>{featuredQuestion?.title || 'Public product questions will appear here.'}</h3>
-                {featuredQuestion ? (
-                  <>
-                    <div className="thread-meta">
-                      <img src={featuredQuestion.author_avatar_url} alt={featuredQuestion.author_name} />
-                      <div>
-                        <strong>{featuredQuestion.author_name}</strong>
-                        <span>{formatRelativeDate(featuredQuestion.created_at)}</span>
-                      </div>
-                    </div>
-                    <p>{featuredQuestion.content}</p>
-                    {featuredQuestion.admin_response && (
-                      <div className="reply-box">
-                        <div className="thread-meta">
-                          <img src={featuredQuestion.admin_avatar_url || '/assets/logo-mark.jpg'} alt="LifeOS Team" />
-                          <div>
-                            <strong>LifeOS Team</strong>
-                            <span>Official reply</span>
+          <div className="questions-container-unified">
+            <div className="contained-questions-window">
+              <div className="feed-scroll-area" ref={feedRef}>
+                {questions.length === 0 ? (
+                  <div className="feed-empty-state">
+                    <MessageSquareText size={48} strokeWidth={1} />
+                    <p>No questions yet. Be the first to start the conversation.</p>
+                  </div>
+                ) : (
+                  <div className="feed-list">
+                    {questions.map((q) => (
+                      <div key={q.id} className={`feed-item-thread ${q.is_featured ? 'featured-item' : ''}`}>
+                        <div className="feed-user-meta">
+                          <img 
+                            src={q.author_avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${q.email}`} 
+                            alt="" 
+                            className="feed-avatar" 
+                          />
+                          <div className="feed-user-details">
+                            <span className="feed-author">
+                              {formatDisplayName(q.email || q.author_email, q.author_name || q.name)}
+                            </span>
+                            <span className="feed-time">{formatRelativeDate(q.created_at)}</span>
                           </div>
+                          {q.is_featured && <span className="feed-badge-featured">Featured Thread</span>}
                         </div>
-                        <p>{featuredQuestion.admin_response}</p>
+                        
+                        <div className="feed-bubble">
+                          {q.title && <h3 className="feed-bubble-title">{q.title}</h3>}
+                          <p className="feed-bubble-content">{q.content}</p>
+                        </div>
+
+                        {q.admin_response && (
+                          <div className="feed-admin-reply">
+                            <div className="feed-user-meta min">
+                              <img src={q.admin_avatar_url || '/assets/logo-mark.jpg'} alt="" className="feed-avatar-tiny" />
+                              <div className="feed-user-details">
+                                <span className="feed-author">LifeOS Team</span>
+                                <span className="feed-badge-official">Official Reply</span>
+                              </div>
+                            </div>
+                            <p className="feed-reply-content">{q.admin_response}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="contained-input-shell">
+                {questionState === 'success' ? (
+                  <div className="feed-post-confirmation">
+                    <div className="conf-icon"><CheckCircle2 size={24} /></div>
+                    <span>Question posted to the wall!</span>
+                    <button className="text-btn" onClick={() => setQuestionState('idle')}>Post another</button>
+                  </div>
+                ) : (
+                  <div className="feed-input-flex">
+                    {!registeredVisitor ? (
+                      <div className="feed-input-locked" onClick={() => sectionScroll('waitlist')}>
+                        <span className="lock-text">Become a member to join the conversation</span>
+                        <div className="lock-btn">Register</div>
+                      </div>
+                    ) : (
+                      <div className={`feed-input-composer ${showFullInput ? 'expanded' : ''}`}>
+                        {!showFullInput ? (
+                          <div className="feed-input-trigger" onClick={() => setShowFullInput(true)}>
+                            <div className="user-dot" />
+                            <span className="trigger-placeholder">
+                              Ask {registeredVisitor.name.split(' ')[0]}...
+                            </span>
+                            <Send size={18} className="trigger-icon" />
+                          </div>
+                        ) : (
+                          <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
+                            <div className="feed-form-header">
+                              <span>New Question</span>
+                              <button type="button" onClick={() => setShowFullInput(false)} className="close-mini"><X size={16} /></button>
+                            </div>
+                            <input
+                              className="feed-field-minimal"
+                              value={questionForm.title}
+                              onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
+                              placeholder="Title (optional)"
+                              autoComplete="off"
+                            />
+                            <textarea
+                              className="feed-textarea-minimal"
+                              value={questionForm.content}
+                              onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
+                              placeholder="What's on your mind?"
+                              required
+                              rows={3}
+                              autoFocus
+                            />
+                            <div className="feed-form-actions">
+                              <p className="feed-helper">Keep it productive. All posts are public.</p>
+                              <button 
+                                type="submit" 
+                                className="feed-submit-btn" 
+                                disabled={questionState === 'loading' || !questionForm.content.trim()}
+                              >
+                                {questionState === 'loading' ? 'Sending...' : 'Send'}
+                                <Send size={16} />
+                              </button>
+                            </div>
+                          </form>
+                        )}
                       </div>
                     )}
-                  </>
-                ) : (
-                  <p>Visitors will see the clearest questions and product replies without leaving the landing page.</p>
+                  </div>
                 )}
-
-                <div className="mobile-social-actions">
-                  <div className="question-actions">
-                    <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
-                      <Heart size={18} />
-                      <span>Like</span>
-                    </button>
-                    <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
-                      <MessageCircle size={18} />
-                      <span>Comment</span>
-                    </button>
-                  </div>
-                  <div className="comment-input-trigger" onClick={() => sectionScroll('waitlist')}>
-                    <input type="text" placeholder="Add a comment..." readOnly />
-                  </div>
-                </div>
-              </article>
-
-              <div className="thread-stack">
-                {questions
-                  .filter((q) => q.id !== featuredQuestion?.id)
-                  .slice(0, 3)
-                  .map((question) => (
-                    <article className="product-card thread-card" key={question.id}>
-                    <h3>{question.title || 'Question'}</h3>
-                    <p>{question.content}</p>
-                    
-                    <div className="mobile-social-actions">
-                      <div className="question-actions">
-                        <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
-                          <Heart size={16} />
-                        </button>
-                        <button className="action-btn" onClick={() => sectionScroll('waitlist')}>
-                          <MessageCircle size={16} />
-                        </button>
-                      </div>
-                      <div className="comment-input-trigger" onClick={() => sectionScroll('waitlist')}>
-                        <input type="text" placeholder="Add a comment..." readOnly />
-                      </div>
-                    </div>
-                  </article>
-                ))}
               </div>
-            </div>
-
-            <form className="product-card composer-card" onSubmit={handleQuestionSubmit}>
-              <div className="card-topline">
-                <span>Post a question</span>
-              </div>
-              {registeredVisitor ? (
-                <div className="visitor-banner">
-                  <strong>{registeredVisitor.name}</strong>
-                  <span>{registeredVisitor.email}</span>
-                </div>
-              ) : (
-                <div className="visitor-banner muted">
-                  <strong>Register once before posting</strong>
-                  <span>Join the waitlist below and this browser will remember you.</span>
-                  <button className="button button-secondary button-inline" type="button" onClick={() => sectionScroll('waitlist')}>
-                    Register this browser
-                  </button>
-                </div>
-              )}
-
-              <label className="field">
-                <span>Optional title</span>
-                <input
-                  value={questionForm.title}
-                  onChange={(event) => setQuestionForm((current) => ({ ...current, title: event.target.value }))}
-                  placeholder="Example: Daily streak support"
-                />
-              </label>
-
-              <label className="field">
-                <span>Message</span>
-                <textarea
-                  value={questionForm.content}
-                  onChange={(event) => setQuestionForm((current) => ({ ...current, content: event.target.value }))}
-                  placeholder="Ask a question or suggest something..."
-                  rows={5}
-                  required
-                />
-              </label>
-
-              <p className="helper-text">Example: Can I track my daily streak?</p>
-
-              <button className="button button-primary button-full" type="submit" disabled={questionState === 'loading' || !registeredVisitor}>
-                {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
-              </button>
-
-              {questionState === 'success' && <p className="feedback success">Your question is now visible on the wall.</p>}
-              {questionState === 'error' && (
-                <p className="feedback error">
-                  {registeredVisitor ? 'Could not post right now. Please try again.' : 'Join the waitlist first, then post from this browser.'}
-                </p>
-              )}
-            </form>
-          </div>
-
-          {/* New Instagram-style Comments Widget (MOBILE ONLY) */}
-          <div className="mobile-only mobile-questions-widget">
-            <div className="comments-feed">
-              {questions.map((q) => (
-                <div key={q.id} className="comment-thread">
-                  <div className="comment-item">
-                    <img src={q.author_avatar_url || '/assets/default-avatar.svg'} alt={q.author_name} className="comment-avatar" />
-                    <div className="comment-body">
-                      <div className="comment-meta">
-                        <span className="comment-author">{q.author_name || 'Anonymous'}</span>
-                        <span className="comment-time">{formatRelativeDate(q.created_at)}</span>
-                      </div>
-                      <p className="comment-text">{q.content}</p>
-                      {q.admin_response && (
-                        <div className="comment-reply">
-                          <img src={q.admin_avatar_url || '/assets/logo-mark.jpg'} alt="Team" className="comment-avatar-small" />
-                          <div className="comment-body">
-                            <div className="comment-meta">
-                              <span className="comment-author">LifeOS Team</span>
-                              <span className="badge-official">Official Reply</span>
-                            </div>
-                            <p className="comment-text">{q.admin_response}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="comment-input-area">
-              {questionState === 'success' ? (
-                <div className="post-confirmation animate-fade-in">
-                  <div className="conf-icon"><Sparkles size={24} /></div>
-                  <div className="conf-text">
-                    <h3>You're in 🚀</h3>
-                    <p>We’ve got you — check your email soon for registration and early access details.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="input-bar-container">
-                  {!registeredVisitor ? (
-                    <div className="instagram-input-bar" onClick={() => sectionScroll('waitlist')}>
-                      <span className="placeholder-text">Ask a question...</span>
-                      <button className="register-btn">Register to post</button>
-                    </div>
-                  ) : (
-                    <div className={`comment-composer-expanded ${showFullInput ? 'show' : ''}`}>
-                      {!showFullInput ? (
-                        <div className="instagram-input-bar active" onClick={() => setShowFullInput(true)}>
-                          <span className="placeholder-text">Ask {registeredVisitor.name.split(' ')[0]}...</span>
-                          <MessageCircle size={18} className="icon-subtle" />
-                        </div>
-                      ) : (
-                        <form className="unified-comment-form" onSubmit={handleQuestionSubmit}>
-                          <div className="form-header">
-                            <span>Post to the wall</span>
-                            <button type="button" onClick={() => setShowFullInput(false)} className="close-mini"><X size={16} /></button>
-                          </div>
-                          <input
-                            className="mini-field"
-                            value={questionForm.title}
-                            onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
-                            placeholder="Title (optional)"
-                          />
-                          <textarea
-                            className="main-comment-input"
-                            value={questionForm.content}
-                            onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
-                            placeholder="Write your message..."
-                            required
-                            rows={3}
-                            autoFocus
-                          />
-                          <button 
-                            type="submit" 
-                            className="button button-primary button-full" 
-                            disabled={questionState === 'loading' || !questionForm.content.trim()}
-                          >
-                            {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
-                            <Send size={16} />
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </section>
