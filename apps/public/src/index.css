@@ -722,7 +722,7 @@ button.primary:hover,
   border-radius: 20px;
   border: 1px solid var(--border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  overflow: clip;
+  overflow: visible;
 }
 
 .questions-dual-pane {
@@ -735,7 +735,7 @@ button.primary:hover,
     display: grid;
     grid-template-columns: 2.2fr 1fr; /* increase comment space */
     gap: 24px;
-    align-items: stretch;
+    align-items: start;
     height: auto;
   }
 }
@@ -756,9 +756,9 @@ button.primary:hover,
 
 @media (min-width: 1024px) {
   .comment-window {
-    height: 460px; /* reduced from 540px */
-    max-height: 460px;
-    overflow-y: auto;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 
@@ -784,7 +784,7 @@ button.primary:hover,
 @media (min-width: 1024px) {
   .input-panel {
     max-width: 360px;
-    height: 460px; /* match comment window height */
+    height: auto; /* grow naturally */
     padding-bottom: 12px;
   }
 }
