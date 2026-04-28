@@ -609,32 +609,32 @@ button.primary:hover,
   min-height: 150px;
 }
 
-.step-chip,
-.status-chip {
+/* Status Badges */
+.status-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  min-height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--section-alt);
-  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 11px;
-  font-weight: 600;
-  text-transform: capitalize;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.status-past {
-  color: #275e44;
+.status-badge.status-past {
+  background: #ecfdf5;
+  color: #065f46;
 }
 
-.status-present {
-  color: var(--accent-strong);
+.status-badge.status-present {
+  background: #eff6ff;
+  color: #1e40af;
 }
 
-.status-future {
-  color: #6a5846;
+.status-badge.status-future {
+  background: #fff7ed;
+  color: #9a3412;
 }
 
 .point-list {
@@ -657,12 +657,56 @@ button.primary:hover,
 }
 
 .roadmap-card {
-  padding: 16px 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 220px;
 }
 
-.roadmap-card h3 {
-  font-size: 18px;
-  margin-bottom: 4px;
+.roadmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.roadmap-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.roadmap-desc {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.roadmap-tags {
+  margin-top: auto;
+  padding-top: 12px;
+  gap: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.roadmap-tags span {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #f8f6f2;
+  color: #7c7267;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.03);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .roadmap-card p {
@@ -1693,7 +1737,7 @@ select option {
     gap: 4px;
   }
 
-  .roadmap-card .status-chip {
+  .roadmap-card .status-badge {
     padding: 2px 6px;
     font-size: 10px;
   }

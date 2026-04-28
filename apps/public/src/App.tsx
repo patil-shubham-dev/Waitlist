@@ -583,16 +583,15 @@ function App() {
           <div className="card-grid card-grid-2 roadmap-grid">
             {roadmap.map((item, index) => (
               <article className="product-card roadmap-card" key={item.id}>
-                <span className="step-number">0{index + 1}</span>
-                <div className="card-topline">
-                  <span className={`status-chip status-${item.status}`}>{item.status}</span>
-                  <span className="status-meaning">
-                    {item.status === 'past' ? 'Shipped' : item.status === 'present' ? 'In progress' : 'Planned'}
+                <div className="roadmap-header">
+                  <span className="step-number">STEP 0{index + 1}</span>
+                  <span className={`status-badge status-${item.status}`}>
+                    {item.status === 'past' ? 'Completed' : item.status === 'present' ? 'In Progress' : 'Upcoming'}
                   </span>
                 </div>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <div className="point-list">
+                <h3 className="roadmap-title">{item.title}</h3>
+                <p className="roadmap-desc">{item.description}</p>
+                <div className="point-list roadmap-tags">
                   {item.items?.map((point: string) => (
                     <span key={point}>{point}</span>
                   ))}
