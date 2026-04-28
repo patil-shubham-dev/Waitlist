@@ -734,9 +734,26 @@ button.primary:hover,
 @media (min-width: 1024px) {
   .questions-layout {
     display: grid;
-    grid-template-columns: 2.2fr 1fr; /* increase comment space */
+    grid-template-columns: 2.2fr 1fr;
     gap: 24px;
     align-items: start;
+    height: auto;
+  }
+
+  .questions-container-unified {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .question-box {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
     height: auto;
   }
 }
@@ -786,7 +803,12 @@ button.primary:hover,
   .input-panel {
     max-width: 360px;
     height: auto; /* grow naturally */
+    background: transparent;
     padding-bottom: 12px;
+  }
+
+  .pane-inner {
+    padding: 0;
   }
 }
 
