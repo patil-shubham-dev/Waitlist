@@ -7,14 +7,13 @@
     "dev:admin": "npm run dev --workspace=apps/admin",
     "build:public": "npm run build --workspace=apps/public",
     "build:admin": "npm run build --workspace=apps/admin",
-    "build": "npm run build:public && npm run build:admin && node scripts/build-root.mjs"
+    "build": "npm run build:public && npm run build:admin && node -e \"const fs=require('fs'); fs.rmSync('dist',{force:true,recursive:true}); fs.mkdirSync('dist/admin7276',{recursive:true}); fs.cpSync('apps/public/dist','dist',{recursive:true}); fs.cpSync('apps/admin/dist','dist/admin7276',{recursive:true});\""
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "@vercel/edge": "^1.1.1",
     "@vercel/node": "^3.0.0",
     "typescript": "^5.3.3",
-    "@types/node": "^20.10.0",
-    "next": "^14.0.0"
+    "@types/node": "^20.10.0"
   }
 }
+
