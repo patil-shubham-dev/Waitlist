@@ -340,53 +340,7 @@ function App() {
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const feedRef = useRef<HTMLDivElement>(null);
 
-  // Scroll propagation fix (prevent scroll trap)
-  useEffect(() => {
-    const container = feedRef.current;
-    if (!container) return;
 
-    const handleWheel = (e: WheelEvent) => {
-      const atTop = container.scrollTop <= 0;
-      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
-
-      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-        // Allow page scroll to take over
-        return;
-      }
-
-      // Stop propagation to ensure we only scroll the box when it can be scrolled
-      e.stopPropagation();
-    };
-
-    let startY = 0;
-    const handleTouchStart = (e: TouchEvent) => {
-      startY = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const currentY = e.touches[0].clientY;
-      const diff = startY - currentY;
-      const atTop = container.scrollTop <= 0;
-      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 2;
-
-      if ((atTop && diff < 0) || (atBottom && diff > 0)) {
-        return;
-      }
-
-      e.stopPropagation();
-    };
-
-    // Use non-passive listeners for wheel to allow blocking if needed (though here we just stopProp)
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [questions]); // Re-attach if content changes (affects scrollHeight)
 
   // Smart auto-scroll logic
   useEffect(() => {

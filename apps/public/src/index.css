@@ -687,6 +687,7 @@ button.primary:hover,
 .feed-view-pane {
   overflow-y: auto;
   overscroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 24px;
   background: #fdfcfb;
   display: flex;
@@ -752,6 +753,8 @@ button.primary:hover,
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
     border-right: none;
     scroll-behavior: smooth;
+    overscroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .feed-list {
