@@ -1804,7 +1804,7 @@ select option {
 /* Footer System */
 .footer {
   width: min(var(--max-width), calc(100vw - 32px));
-  margin: 80px auto 0;
+  margin: 40px auto 0;
   padding: 48px 0 64px;
   border-top: 1px solid var(--border);
   display: flex;
@@ -1813,6 +1813,11 @@ select option {
   text-align: center;
   gap: 32px;
 }
+
+.waitlist-section {
+  padding-bottom: 40px;
+}
+
 
 .footer-left {
   display: flex;

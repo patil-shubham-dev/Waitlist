@@ -810,7 +810,7 @@ function App() {
           </div>
         </section>
 
-        <section id="waitlist" className="page-section">
+        <section id="waitlist" className="page-section waitlist-section">
           <div className="waitlist-layout">
             <div className="waitlist-content">
               <span className="section-label">Waitlist</span>
