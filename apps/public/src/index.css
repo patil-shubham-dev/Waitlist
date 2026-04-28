@@ -825,66 +825,156 @@ button.primary:hover,
 
 @media (max-width: 768px) {
   .questions-container-unified {
-    padding: 24px 0;
-    margin: 0 -16px;
+    padding: 0; /* Remove top/bottom padding */
+    margin: 32px -16px 0;
+    overflow: hidden;
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1px solid var(--border);
   }
   
   .questions-dual-pane {
     flex-direction: column;
-    height: auto;
-    gap: 20px;
+    height: 65vh; /* Unified widget height */
+    gap: 0;
   }
 
   .comment-window {
-    flex: none;
-    height: 65vh; /* Fixed height widget */
-    margin: 0 16px;
-    padding: 16px;
+    flex: 1;
+    height: auto;
+    margin: 0;
+    padding: 20px;
     background: #ffffff;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
-    border-right: none;
-    overscroll-behavior: auto;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overscroll-behavior: contain;
   }
 
   .feed-list {
-    gap: 20px;
-  }
-
-  .feed-item-thread {
-    gap: 4px;
+    gap: 24px;
+    padding-bottom: 20px;
   }
 
   .feed-bubble {
-    background: #f9f9f9;
-    padding: 12px 14px;
-    border-radius: 12px 16px 16px 16px;
+    background: #f8f6f2;
+    padding: 12px 16px;
+    border-radius: 4px 16px 16px 16px;
     border: none;
     box-shadow: none;
-    max-width: 100%;
+    max-width: 90%;
   }
 
+  /* Sticky Input Bar Redesign */
   .input-panel {
+    position: sticky;
+    bottom: 0;
     flex: none;
-    margin: 0 16px;
+    margin: 0;
     background: #ffffff;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.02);
+    z-index: 100;
   }
 
   .pane-inner {
-    padding: 20px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   }
 
-  .pane-control-title {
-    font-size: 14px;
+  .question-box {
+    padding: 0;
+    border: none;
+    background: transparent;
   }
 
-  .pane-helper-text {
-    font-size: 11px;
-    margin-bottom: 12px;
+  .feed-form-full {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    gap: 12px !important;
+  }
+
+  /* Hide Topic field on mobile for chat-like experience */
+  .feed-field-minimal {
+    display: none !important; 
+  }
+
+  .textarea-wrapper {
+    flex: 1;
+    position: relative;
+  }
+
+  .feed-textarea-minimal {
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 11px 16px !important;
+    border-radius: 22px !important;
+    background: #f5f5f5 !important;
+    border: 1px solid transparent !important;
+    font-size: 15px !important;
+    margin: 0 !important;
+    resize: none !important;
+  }
+
+  .feed-textarea-minimal:focus {
+    background: #ffffff !important;
+    border-color: var(--accent) !important;
+  }
+
+  .char-counter {
+    display: none !important; /* Hide to save space */
+  }
+
+  .feed-form-actions {
+    margin: 0 !important;
+    flex: none;
+  }
+
+  .feed-form-actions .button {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .feed-form-actions .button span {
+    display: none; /* Hide text, only icon */
+  }
+
+  .feed-form-actions .button svg {
+    margin: 0 !important;
+  }
+
+  /* Locked / Register bar on mobile */
+  .feed-input-locked {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+  }
+
+  .feed-input-locked .pane-status-title {
+    font-size: 13px;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .feed-input-locked .pane-helper-text {
+    display: none; /* Hide helper text on mobile bar */
+  }
+
+  .lock-btn-full {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    width: auto;
   }
 }
 

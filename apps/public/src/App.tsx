@@ -723,7 +723,7 @@ function App() {
                         </div>
                       ) : (
                         <div className="feed-input-composer question-box">
-                          <div className="feed-user-identity">
+                          <div className="feed-user-identity desktop-only">
                             <span className="identity-label">Posting as</span>
                             <div className="identity-card">
                               <div className="avatar" style={{ backgroundColor: getAvatarColor(registeredVisitor.name) }}>
@@ -734,7 +734,7 @@ function App() {
                           </div>
 
                           <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
-                            <div className="input-header">
+                            <div className="input-header desktop-only">
                               <h3>Ask a question or share feedback</h3>
                               <p>Be specific. Clear questions get better answers.</p>
                             </div>
