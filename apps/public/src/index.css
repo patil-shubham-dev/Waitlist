@@ -666,7 +666,6 @@ button.primary:hover,
   height: 520px; /* Restored height for better visibility */
 }
 
-.feed-view-pane {
 .questions-layout {
   display: grid;
   grid-template-columns: 60% 40%;
