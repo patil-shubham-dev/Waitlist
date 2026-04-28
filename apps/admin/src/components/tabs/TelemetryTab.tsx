@@ -261,7 +261,7 @@ export default function TelemetryTab() {
                         {v.device_type === 'mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
                       </div>
                       <div className="visitor-details">
-                        <span className="visitor-id">User_{v.visitor_id.substring(0, 4)}</span>
+                        <span className="visitor-id">User_{(v.visitor_id || 'Anon').substring(0, 4)}</span>
                         <span className="visitor-action">Visited {v.page_path}</span>
                       </div>
                     </div>
