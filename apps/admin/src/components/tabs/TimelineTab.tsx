@@ -1,153 +1,120 @@
 import { useEffect, useState } from 'react';
-import { Plus, Save, Trash2 } from 'lucide-react';
-import { adminGet, adminPost, type PhaseRecord } from '../../lib/adminApi';
-
-type Draft = {
-  id?: string;
-  title: string;
-  description: string;
-  status: 'past' | 'present' | 'future';
-  sort_order: number;
-  items: string;
-};
-
-const EMPTY_DRAFT: Draft = {
-  title: '',
-  description: '',
-  status: 'future',
-  sort_order: 1,
-  items: '',
-};
+import { supabase, type TimelineEntry } from '../../lib/supabase';
+import { CheckCircle2, Clock, Calendar, Edit2, Plus, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 
 export default function TimelineTab() {
-  const [items, setItems] = useState<PhaseRecord[]>([]);
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [message, setMessage] = useState('');
+  const [phases, setPhases] = useState<TimelineEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const load = async () => {
-    const data = await adminGet<{ items: PhaseRecord[] }>('phases');
-    setItems(data.items);
+  const fetchPhases = async () => {
+    const { data } = await supabase
+      .from('timeline_entries')
+      .select('*')
+      .order('sort_order', { ascending: true });
+    
+    setPhases(data || []);
+    setLoading(false);
   };
 
   useEffect(() => {
-    load();
+    fetchPhases();
   }, []);
 
-  const edit = (item: PhaseRecord) => {
-    setDraft({
-      id: item.id,
-      title: item.title,
-      description: item.description || '',
-      status: item.status,
-      sort_order: item.sort_order,
-      items: (item.items || []).join('\n'),
-    });
+  const updateStatus = async (id: string, status: 'past' | 'present' | 'future') => {
+    await supabase.from('timeline_entries').update({ status }).eq('id', id);
+    fetchPhases();
   };
 
-  const save = async () => {
-    await adminPost('save-phase', {
-      ...draft,
-      items: draft.items.split('\n').map((item) => item.trim()).filter(Boolean),
-    });
-    setDraft({ ...EMPTY_DRAFT, sort_order: items.length + 1 });
-    setMessage('Phase saved.');
-    await load();
-  };
-
-  const remove = async (id: string) => {
-    if (!window.confirm('Delete this launch phase?')) return;
-    await adminPost('delete-phase', { id });
-    await load();
-  };
+  if (loading) return <div className="loading-dot" />;
 
   return (
     <div className="tab-stack">
-      <div className="tab-header">
+      <div className="tab-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1>Launch phases</h1>
-          <p>Control the public phases section and keep the rollout aligned with the LifeOS product story.</p>
+          <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>Launch Phases</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Manage the product roadmap and rollout stages</p>
         </div>
+        <button className="button-primary">
+          <Plus size={18} />
+          New Phase
+        </button>
       </div>
 
-      {message && <p className="admin-success">{message}</p>}
-
-      <div className="content-grid">
-        <section className="panel-card">
-          <div className="section-row">
-            <div>
-              <h2>{draft.id ? 'Edit phase' : 'Add phase'}</h2>
-              <p>Each phase is shown publicly on the landing page.</p>
-            </div>
-            {!draft.id && (
-              <button className="admin-button" onClick={() => setDraft({ ...EMPTY_DRAFT, sort_order: items.length + 1 })}>
-                <Plus size={16} />
-                New
-              </button>
-            )}
-          </div>
-          <div className="form-stack">
-            <label>
-              <span>Title</span>
-              <input value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} />
-            </label>
-            <label>
-              <span>Description</span>
-              <textarea rows={4} value={draft.description} onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))} />
-            </label>
-            <div className="form-split">
-              <label>
-                <span>Status</span>
-                <select value={draft.status} onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value as Draft['status'] }))}>
-                  <option value="past">Past</option>
-                  <option value="present">Present</option>
-                  <option value="future">Future</option>
-                </select>
-              </label>
-              <label>
-                <span>Sort order</span>
-                <input type="number" value={draft.sort_order} onChange={(event) => setDraft((current) => ({ ...current, sort_order: Number(event.target.value) }))} />
-              </label>
-            </div>
-            <label>
-              <span>Bullet items (one per line)</span>
-              <textarea rows={5} value={draft.items} onChange={(event) => setDraft((current) => ({ ...current, items: event.target.value }))} />
-            </label>
-            <button className="admin-button admin-button-primary" onClick={save}>
-              <Save size={16} />
-              Save phase
-            </button>
-          </div>
-        </section>
-
-        <section className="panel-card">
-          <h2>Current phases</h2>
-          <div className="list-stack">
-            {items.map((item) => (
-              <article className="list-card" key={item.id}>
-                <div className="section-row">
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.description}</p>
+      <div className="timeline">
+        {phases.map((phase) => (
+          <div key={phase.id} className={`timeline-phase${phase.status === 'present' ? ' active' : ''}`}>
+            <div className="timeline-dot" />
+            <div className="timeline-content">
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{phase.title}</h3>
+                    {phase.status === 'present' && (
+                      <span className="live-indicator" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
+                        Current Phase
+                      </span>
+                    )}
                   </div>
-                  <span className={`status-pill ${item.status === 'past' ? 'ok' : item.status === 'present' ? 'pending' : ''}`}>
-                    {item.status}
-                  </span>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{phase.description}</p>
                 </div>
-                <div className="tag-row">
-                  {(item.items || []).map((bullet) => (
-                    <span className="tag" key={bullet}>{bullet}</span>
-                  ))}
-                </div>
-                <div className="table-actions">
-                  <button className="admin-button" onClick={() => edit(item)}>Edit</button>
-                  <button className="icon-button danger" onClick={() => remove(item.id)}>
-                    <Trash2 size={16} />
+                
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select 
+                    value={phase.status} 
+                    onChange={(e) => updateStatus(phase.id, e.target.value as any)}
+                    style={{ padding: '4px 8px', fontSize: '12px', width: 'auto' }}
+                  >
+                    <option value="past">Completed</option>
+                    <option value="present">Active</option>
+                    <option value="future">Upcoming</option>
+                  </select>
+                  <button className="sidebar-toggle" style={{ border: '1px solid var(--border)' }}>
+                    <Edit2 size={14} />
                   </button>
                 </div>
-              </article>
-            ))}
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {phase.items?.map((item, idx) => (
+                  <div 
+                    key={idx} 
+                    style={{ 
+                      background: 'var(--page)', 
+                      padding: '4px 12px', 
+                      borderRadius: '999px',
+                      fontSize: '13px',
+                      color: 'var(--text-secondary)',
+                      border: '1px solid var(--border)'
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+                <button 
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: '999px',
+                    fontSize: '13px',
+                    color: 'var(--accent)',
+                    border: '1px dashed var(--accent)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Plus size={12} /> Add Feature
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)' }}>
+                <button style={{ color: 'var(--text-faint)' }} title="Move Up"><ArrowUp size={16} /></button>
+                <button style={{ color: 'var(--text-faint)' }} title="Move Down"><ArrowDown size={16} /></button>
+                <button style={{ color: 'var(--danger)', opacity: 0.5 }}><Trash2 size={16} /></button>
+              </div>
+            </div>
           </div>
-        </section>
+        ))}
       </div>
     </div>
   );

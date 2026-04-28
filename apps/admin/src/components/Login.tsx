@@ -3,8 +3,6 @@ import { LockKeyhole, ShieldCheck } from 'lucide-react';
 
 const LOCAL_SESSION_KEY = 'lifeos_admin_local_authed';
 
-// In local dev (no Vercel API), check password client-side against VITE_ADMIN_PASSWORD.
-// In production, the /api/auth serverless function handles it securely.
 async function attemptLogin(password: string): Promise<boolean> {
   try {
     const response = await fetch('/api/auth', {
@@ -14,15 +12,11 @@ async function attemptLogin(password: string): Promise<boolean> {
       body: JSON.stringify({ password }),
     });
     if (response.ok) return true;
-    // If the API returns 401 it's a wrong password (even in prod)
     if (response.status === 401) return false;
-    // Any other status (e.g. 404 = no Vercel function in local dev) → fall through
     throw new Error(`status ${response.status}`);
   } catch {
-    // Local dev fallback: check against VITE_ADMIN_PASSWORD directly
     const expected = import.meta.env.VITE_ADMIN_PASSWORD as string | undefined;
     if (expected && password === expected) {
-      // Store a local session flag so the app stays logged in on refresh
       sessionStorage.setItem(LOCAL_SESSION_KEY, 'true');
       return true;
     }
@@ -48,44 +42,85 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="login-shell">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-brand">
-          <img src="assets/logo-mark.jpg" alt="LifeOS" />
-          <div>
-            <strong>LifeOS Waitlist</strong>
-            <span>Admin control panel</span>
+    <div style={{ 
+      height: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      padding: '24px'
+    }}>
+      <form 
+        style={{ 
+          background: 'var(--card)',
+          padding: '40px',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border)',
+          width: '100%',
+          maxWidth: '440px',
+          boxShadow: 'var(--shadow)',
+          textAlign: 'center'
+        }} 
+        onSubmit={handleSubmit}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+          <div style={{ 
+            width: '64px', 
+            height: '64px', 
+            borderRadius: '16px', 
+            background: 'var(--accent-soft)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--accent)'
+          }}>
+            <ShieldCheck size={32} />
           </div>
         </div>
 
-        <div className="login-icon">
-          <ShieldCheck size={22} />
-        </div>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '8px' }}>
+          Admin Login
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '32px' }}>
+          Secure access to the LifeOS Waitlist control panel
+        </p>
 
-        <h1>Secure session required</h1>
-        <p>Manage launch copy, public questions, roadmap phases, and waitlist entries from one place.</p>
-
-        <label>
-          <span>Admin password</span>
-          <div className="input-with-icon">
-            <LockKeyhole size={16} />
+        <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            Administrator Password
+          </label>
+          <div style={{ position: 'relative' }}>
+            <LockKeyhole size={18} style={{ 
+              position: 'absolute', 
+              left: '12px', 
+              top: '50%', 
+              transform: 'translateY(-50%)', 
+              color: 'var(--text-faint)' 
+            }} />
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your admin password"
+              placeholder="••••••••"
+              style={{ paddingLeft: '40px' }}
               autoFocus
               required
             />
           </div>
-        </label>
+        </div>
 
-        <button className="admin-button admin-button-primary" type="submit" disabled={status === 'loading'}>
-          {status === 'loading' ? 'Checking...' : 'Open control panel'}
+        <button 
+          className="button-primary" 
+          type="submit" 
+          disabled={status === 'loading'}
+          style={{ width: '100%', justifyContent: 'center', height: '48px' }}
+        >
+          {status === 'loading' ? 'Authenticating...' : 'Open Control surface'}
         </button>
 
         {status === 'error' && (
-          <p className="admin-error">Incorrect password. Please try again.</p>
+          <p style={{ color: 'var(--danger)', fontSize: '13px', marginTop: '16px', fontWeight: 500 }}>
+            Incorrect password. Please try again.
+          </p>
         )}
       </form>
     </div>

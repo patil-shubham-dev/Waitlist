@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { 
   Search, Filter, SortDesc, Pin, 
   Eye, EyeOff, Trash2, MoreHorizontal,
-  ChevronRight
+  ChevronRight, MessageCircle
 } from 'lucide-react';
 import { adminGet, adminPost, type QuestionRecord } from '../../lib/adminApi';
 
@@ -59,98 +59,135 @@ export default function QuestionsTab({ onSelect, selectedId }: QuestionsTabProps
   };
 
   return (
-    <>
-      <header className="feed-header">
-        <div className="search-box">
-          <Search size={16} />
-          <input 
-            type="text" 
-            placeholder="Search threads, users, or keywords..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: 12 }}>
-          <select 
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ minHeight: 36, padding: '0 12px', fontSize: 13, width: 'auto' }}
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="answered">Answered</option>
-            <option value="flagged">Flagged</option>
-          </select>
-
-          <select 
-            value={typeFilter} 
-            onChange={(e) => setTypeFilter(e.target.value)}
-            style={{ minHeight: 36, padding: '0 12px', fontSize: 13, width: 'auto' }}
-          >
-            <option value="all">All Types</option>
-            <option value="question">Questions</option>
-            <option value="suggestion">Suggestions</option>
-            <option value="bug">Bugs</option>
-            <option value="feature">Features</option>
-          </select>
-        </div>
-      </header>
-
-      <div className="feed-scroll">
-        {isBusy && items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>Loading feed...</div>
-        ) : filteredItems.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}>No threads found.</div>
-        ) : (
-          filteredItems.map((item) => (
-            <article 
-              key={item.id} 
-              className={`mod-card ${selectedId === item.id ? 'active' : ''}`}
-              onClick={() => onSelect(item.id)}
+    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '24px' }}>
+      <div className="tab-stack">
+        <header className="panel" style={{ padding: '16px' }}>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} />
+              <input 
+                type="text" 
+                placeholder="Search community posts..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ paddingLeft: '40px' }}
+              />
+            </div>
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ width: 'auto' }}
             >
-              <div className="card-top">
-                <div className="user-info">
-                  <div className="user-avatar" />
-                  <div className="user-meta">
-                    <span className="user-name">{item.author_name}</span>
-                    <span className="post-time">{new Date(item.created_at).toLocaleDateString()}</span>
+              <option value="all">Status</option>
+              <option value="pending">Pending</option>
+              <option value="answered">Answered</option>
+              <option value="flagged">Flagged</option>
+            </select>
+          </div>
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {isBusy && items.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40 }}><div className="loading-dot" /></div>
+          ) : filteredItems.length === 0 ? (
+            <div className="panel" style={{ textAlign: 'center', padding: 60, color: 'var(--text-faint)' }}>
+              <MessageCircle size={48} strokeWidth={1} style={{ marginBottom: 16, opacity: 0.2 }} />
+              <p>No threads found matching your filters.</p>
+            </div>
+          ) : (
+            filteredItems.map((item) => (
+              <article 
+                key={item.id} 
+                className={`panel${selectedId === item.id ? ' active' : ''}`}
+                onClick={() => onSelect(item.id)}
+                style={{ 
+                  cursor: 'pointer', 
+                  transition: 'var(--transition)',
+                  borderColor: selectedId === item.id ? 'var(--accent)' : 'var(--border)',
+                  borderWidth: selectedId === item.id ? '2px' : '1px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--page)' }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '14px' }}>{item.author_name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-faint)' }}>{new Date(item.created_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                     <button 
+                      className="sidebar-toggle" 
+                      style={{ color: item.is_featured ? 'var(--accent)' : 'inherit' }}
+                      onClick={(e) => handleAction(e, 'feature', item)}
+                     >
+                       <Pin size={14} />
+                     </button>
+                     <button 
+                      className="sidebar-toggle" 
+                      onClick={(e) => handleAction(e, 'visibility', item)}
+                     >
+                       {item.is_public ? <Eye size={14} /> : <EyeOff size={14} />}
+                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                   <button 
-                    className="icon-button" 
-                    style={{ width: 32, height: 32, color: item.is_featured ? 'var(--accent)' : 'inherit' }}
-                    onClick={(e) => handleAction(e, 'feature', item)}
-                   >
-                     <Pin size={14} />
-                   </button>
-                   <button 
-                    className="icon-button" 
-                    style={{ width: 32, height: 32 }}
-                    onClick={(e) => handleAction(e, 'visibility', item)}
-                   >
-                     {item.is_public ? <Eye size={14} /> : <EyeOff size={14} />}
-                   </button>
+
+                <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>{item.title || 'Inquiry'}</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineBreak: 'anywhere', marginBottom: '16px' }}>
+                  {item.content.length > 200 ? item.content.slice(0, 200) + '...' : item.content}
+                </p>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 700, 
+                    textTransform: 'uppercase',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    background: 'var(--page)',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    {item.status}
+                  </span>
+                  <span style={{ 
+                    fontSize: '11px', 
+                    fontWeight: 700, 
+                    textTransform: 'uppercase',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    background: 'var(--accent-soft)',
+                    color: 'var(--accent)'
+                  }}>
+                    {item.type || 'Thread'}
+                  </span>
                 </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <h2 style={{ fontSize: 15 }}>{item.title || 'Untitled Discussion'}</h2>
-                <p className="card-content">{item.content}</p>
-              </div>
-
-              <div className="card-tags">
-                <span className={`status-pill ${item.status}`}>{item.status}</span>
-                <span className="type-tag">{item.type || 'Question'}</span>
-                {item.is_featured && <span className="type-tag" style={{ color: 'var(--accent)' }}>Featured</span>}
-                {!item.is_public && <span className="type-tag" style={{ opacity: 0.5 }}>Hidden</span>}
-              </div>
-            </article>
-          ))
-        )}
+              </article>
+            ))
+          )}
+        </div>
       </div>
-    </>
+
+      <aside className="panel" style={{ height: 'fit-content', position: 'sticky', top: '40px' }}>
+        <div className="panel-header">
+          <h2>Thread Context</h2>
+          <p>Quick filters and moderation tools</p>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="stat-label">Sort by</div>
+          <select style={{ width: '100%' }}>
+            <option>Newest first</option>
+            <option>Oldest first</option>
+            <option>Most helpful</option>
+          </select>
+          
+          <div className="stat-label" style={{ marginTop: '12px' }}>Bulk Actions</div>
+          <button className="sidebar-link" style={{ border: '1px solid var(--border)' }}>
+             <Trash2 size={16} />
+             <span>Delete Selected</span>
+          </button>
+        </div>
+      </aside>
+    </div>
   );
 }
-

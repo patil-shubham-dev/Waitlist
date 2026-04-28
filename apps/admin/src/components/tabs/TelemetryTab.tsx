@@ -1,90 +1,188 @@
 import { useEffect, useState } from 'react';
-import { Activity, MessageSquareText, UserRoundPlus, Users } from 'lucide-react';
-import { adminGet, type OverviewResponse } from '../../lib/adminApi';
+import { Users, UserPlus, MessageSquare, Activity, TrendingUp } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area 
+} from 'recharts';
+import ActivityFeed from '../ActivityFeed';
 
-function MiniChart({ items }: { items: Array<{ date: string; value: number }> }) {
-  const maxValue = Math.max(1, ...items.map((item) => item.value));
-  return (
-    <div className="mini-chart">
-      {items.map((item) => (
-        <div className="mini-bar-group" key={item.date}>
-          <div className="mini-bar" style={{ height: `${(item.value / maxValue) * 100}%` }} />
-          <span>{item.date.slice(5)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+type Stats = {
+  totalWaitlist: number;
+  new24h: number;
+  totalQuestions: number;
+  totalVisits: number;
+};
 
 export default function TelemetryTab() {
-  const [data, setData] = useState<OverviewResponse | null>(null);
-  const [error, setError] = useState('');
+  const [stats, setStats] = useState<Stats>({
+    totalWaitlist: 0,
+    new24h: 0,
+    totalQuestions: 0,
+    totalVisits: 0
+  });
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminGet<OverviewResponse>('overview')
-      .then(setData)
-      .catch((err: Error) => setError(err.message));
+    const fetchData = async () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      
+      const [
+        { count: totalWaitlist },
+        { count: new24h },
+        { count: totalQuestions },
+        { count: totalVisits },
+        { data: signups }
+      ] = await Promise.all([
+        supabase.from('waitlist').select('*', { count: 'exact', head: true }),
+        supabase.from('waitlist').select('*', { count: 'exact', head: true }).gt('created_at', yesterday),
+        supabase.from('questions').select('*', { count: 'exact', head: true }),
+        supabase.from('page_visits').select('*', { count: 'exact', head: true }),
+        supabase.from('waitlist').select('created_at').order('created_at', { ascending: true })
+      ]);
+
+      setStats({
+        totalWaitlist: totalWaitlist || 0,
+        new24h: new24h || 0,
+        totalQuestions: totalQuestions || 0,
+        totalVisits: totalVisits || 0
+      });
+
+      // Process chart data (daily signups)
+      if (signups) {
+        const counts: Record<string, number> = {};
+        signups.forEach(s => {
+          const date = new Date(s.created_at).toLocaleDateString();
+          counts[date] = (counts[date] || 0) + 1;
+        });
+        
+        const sortedData = Object.entries(counts)
+          .map(([date, count]) => ({ date, count }))
+          .slice(-14); // Last 14 days
+          
+        setChartData(sortedData);
+      }
+      
+      setLoading(false);
+    };
+
+    fetchData();
+
+    // Subscribe to changes for live updates
+    const channel = supabase
+      .channel('dashboard-metrics')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waitlist' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'page_visits' }, () => fetchData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  if (error) {
-    return <div className="panel-card"><p className="admin-error">{error}</p></div>;
-  }
-
-  if (!data) {
-    return <div className="panel-card"><p>Loading overview...</p></div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '400px' }}>
+        <div className="loading-dot" />
+      </div>
+    );
   }
 
   return (
     <div className="tab-stack">
-      <div className="tab-header">
+      <div className="tab-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1>Overview</h1>
-          <p>Live launch metrics for the waitlist app, community wall, and product rollout.</p>
+          <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>Dashboard</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Real-time metrics and system health</p>
+        </div>
+        <div className="live-indicator">
+          <div className="live-dot" />
+          Live Metrics
         </div>
       </div>
 
       <div className="stats-grid">
-        <article className="panel-card stat-card">
-          <div className="stat-topline"><Users size={16} /> Total waitlist</div>
-          <strong>{data.totals.waitlist.toLocaleString()}</strong>
-          <span>All joined emails</span>
+        <article className="panel stat-card">
+          <div className="stat-label"><Users size={16} /> Total Waitlist</div>
+          <div className="stat-value">{stats.totalWaitlist.toLocaleString()}</div>
+          <div className="stat-meta">Joined emails all-time</div>
         </article>
-        <article className="panel-card stat-card">
-          <div className="stat-topline"><UserRoundPlus size={16} /> New in 24h</div>
-          <strong>{data.totals.new24h}</strong>
-          <span>Fresh signups since yesterday</span>
+        
+        <article className="panel stat-card">
+          <div className="stat-label"><UserPlus size={16} /> New in 24h</div>
+          <div className="stat-value" style={{ color: 'var(--accent)' }}>+{stats.new24h}</div>
+          <div className="stat-meta">Accelerating growth</div>
         </article>
-        <article className="panel-card stat-card">
-          <div className="stat-topline"><MessageSquareText size={16} /> Public posts</div>
-          <strong>{data.totals.questions}</strong>
-          <span>{data.totals.answered} answered by admin</span>
+
+        <article className="panel stat-card">
+          <div className="stat-label"><MessageSquare size={16} /> Questions</div>
+          <div className="stat-value">{stats.totalQuestions}</div>
+          <div className="stat-meta">Community inquiries</div>
         </article>
-        <article className="panel-card stat-card">
-          <div className="stat-topline"><Activity size={16} /> Visits in 14d</div>
-          <strong>{data.totals.visits14d.toLocaleString()}</strong>
-          <span>Traffic tracked from the landing page</span>
+
+        <article className="panel stat-card">
+          <div className="stat-label"><Activity size={16} /> Traffic</div>
+          <div className="stat-value">{stats.totalVisits.toLocaleString()}</div>
+          <div className="stat-meta">Site visits tracked</div>
         </article>
       </div>
 
-      <div className="chart-grid">
-        <article className="panel-card">
-          <div className="section-row">
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) 1fr', gap: '24px' }}>
+        <div className="panel" style={{ minHeight: '400px' }}>
+          <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <h2>Waitlist trend</h2>
-              <p>Daily signup volume over the last two weeks.</p>
+              <h2>Signup Velocity</h2>
+              <p>Daily growth trend for the last 14 days</p>
             </div>
+            <TrendingUp size={20} style={{ color: 'var(--accent)' }} />
           </div>
-          <MiniChart items={data.series.waitlist} />
-        </article>
-        <article className="panel-card">
-          <div className="section-row">
-            <div>
-              <h2>Community wall trend</h2>
-              <p>Questions, suggestions, and feedback submitted publicly.</p>
-            </div>
+          
+          <div className="chart-container">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: 'var(--text-faint)' }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: 'var(--text-faint)' }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    borderRadius: '12px', 
+                    border: '1px solid var(--border)',
+                    boxShadow: 'var(--shadow)',
+                    fontSize: '12px'
+                  }} 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="count" 
+                  stroke="var(--accent)" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorCount)" 
+                  animationDuration={1500}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
-          <MiniChart items={data.series.questions} />
-        </article>
+        </div>
+
+        <ActivityFeed />
       </div>
     </div>
   );

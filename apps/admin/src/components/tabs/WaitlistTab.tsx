@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Download, Search, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Download, Search, Trash2, XCircle, MoreVertical } from 'lucide-react';
 import { adminGet, adminPost, type WaitlistRecord } from '../../lib/adminApi';
 
 export default function WaitlistTab() {
@@ -61,63 +61,89 @@ export default function WaitlistTab() {
 
   return (
     <div className="tab-stack">
-      <div className="tab-header">
+      <div className="tab-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1>Waitlist</h1>
-          <p>Review signups, approve early testers, export the list, and keep launch data clean.</p>
+          <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>Waitlist</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Review and manage early access signups</p>
         </div>
-        <button className="admin-button" onClick={exportCsv}>
-          <Download size={16} />
+        <button className="button-primary" onClick={exportCsv}>
+          <Download size={18} />
           Export CSV
         </button>
       </div>
 
-      <div className="panel-card">
-        <div className="toolbar-row">
-          <div className="search-box">
-            <Search size={16} />
+      <div className="panel">
+        <div style={{ marginBottom: '24px', display: 'flex', gap: '16px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name, email, or role"
+              placeholder="Search signups..."
+              style={{ paddingLeft: '40px' }}
             />
           </div>
         </div>
 
-        {error && <p className="admin-error">{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', marginBottom: '16px' }}>{error}</p>}
 
-        <div className="table-shell">
-          <table className="admin-table">
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Joined</th>
-                <th />
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>User</th>
+                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Role</th>
+                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Status</th>
+                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Joined</th>
+                <th style={{ textAlign: 'right', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.name}</td>
-                  <td>{item.email}</td>
-                  <td>{item.role || 'other'}</td>
-                  <td>
-                    <span className={`status-pill ${item.approved ? 'ok' : 'pending'}`}>
-                      {item.approved ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '16px 12px' }}>
+                    <div style={{ fontWeight: 600 }}>{item.name}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{item.email}</div>
+                  </td>
+                  <td style={{ padding: '16px 12px', fontSize: '14px' }}>{item.role || 'Other'}</td>
+                  <td style={{ padding: '16px 12px' }}>
+                    <span style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '4px', 
+                      fontSize: '12px', 
+                      fontWeight: 600,
+                      color: item.approved ? 'var(--success)' : 'var(--text-faint)',
+                      background: item.approved ? 'rgba(22, 121, 75, 0.08)' : 'var(--page)',
+                      padding: '4px 8px',
+                      borderRadius: '6px'
+                    }}>
+                      {item.approved ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
                       {item.approved ? 'Approved' : 'Pending'}
                     </span>
                   </td>
-                  <td>{new Date(item.created_at).toLocaleString()}</td>
-                  <td className="table-actions">
-                    <button className="admin-button" disabled={busyId === item.id} onClick={() => toggleApproval(item)}>
-                      {item.approved ? 'Revoke' : 'Approve'}
-                    </button>
-                    <button className="icon-button danger" disabled={busyId === item.id} onClick={() => removeEntry(item.id)}>
-                      <Trash2 size={16} />
-                    </button>
+                  <td style={{ padding: '16px 12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </td>
+                  <td style={{ padding: '16px 12px', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <button 
+                        className="sidebar-toggle" 
+                        disabled={busyId === item.id} 
+                        onClick={() => toggleApproval(item)}
+                        style={{ border: '1px solid var(--border)', fontSize: '12px', padding: '4px 12px' }}
+                      >
+                        {item.approved ? 'Revoke' : 'Approve'}
+                      </button>
+                      <button 
+                        className="sidebar-toggle" 
+                        disabled={busyId === item.id} 
+                        onClick={() => removeEntry(item.id)}
+                        style={{ color: 'var(--danger)', border: '1px solid var(--border)' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
