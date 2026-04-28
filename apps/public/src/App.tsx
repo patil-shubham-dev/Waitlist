@@ -692,6 +692,19 @@ function App() {
                         </div>
                       ) : (
                         <div className="feed-input-composer">
+                          <div className="feed-user-identity">
+                            <span className="identity-label">Posting as</span>
+                            <div className="identity-card">
+                              <div 
+                                className="feed-avatar-initials sm"
+                                style={{ backgroundColor: getAvatarColor(registeredVisitor.name) }}
+                              >
+                                {getInitials(registeredVisitor.name)}
+                              </div>
+                              <span className="identity-name">{registeredVisitor.name}</span>
+                            </div>
+                          </div>
+
                           <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
                             <div className="feed-form-header">
                               <h3 className="pane-control-title">Ask a question or share feedback</h3>
@@ -711,7 +724,7 @@ function App() {
                                 onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
                                 placeholder="Your question or feedback..."
                                 required
-                                rows={5}
+                                rows={6}
                               />
                               <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
                                 {questionForm.content.length}/280

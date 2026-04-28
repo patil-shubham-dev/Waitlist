@@ -9,6 +9,7 @@
   --text-secondary: #666666;
   --text-faint: #999999;
   --accent: #ff6b00;
+  --accent-strong: #e66000;
   --accent-soft: rgba(255, 107, 0, 0.08);
   --border: #eaeaea;
   --shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
@@ -25,6 +26,7 @@
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
 }
+
 
 * {
   box-sizing: border-box;
@@ -620,7 +622,11 @@ input:focus, textarea:focus {
 .button-primary:hover {
   background: var(--accent-strong);
   transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(255, 107, 0, 0.2);
+  opacity: 1 !important;
+  visibility: visible !important;
 }
+
 
 /* Timeline */
 .timeline {

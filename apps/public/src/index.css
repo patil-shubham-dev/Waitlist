@@ -667,24 +667,25 @@ button.primary:hover,
 }
 
 .feed-view-pane {
-  flex: 0 0 75%;
+  flex: 0 0 68%;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 32px;
+  padding: 32px 48px;
   background: #fdfcfb;
   display: flex;
   flex-direction: column;
   gap: 20px;
   scroll-behavior: smooth;
-  border-right: 1px solid var(--border);
 }
 
 .feed-control-pane {
-  flex: 0 0 25%;
+  flex: 0 0 32%;
   background: #ffffff;
   display: flex;
   flex-direction: column;
+  border-left: 1px solid var(--border);
 }
+
 
 .pane-inner {
   padding: 24px;
@@ -772,11 +773,12 @@ button.primary:hover,
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
   width: 100%;
-  max-width: 650px; /* CENTERED READING WIDTH */
-  margin: 0 auto;
+  max-width: 600px;
+  margin: 0; /* Left align inside pane */
 }
+
 
 .feed-item-thread {
   display: flex;
@@ -814,11 +816,13 @@ button.primary:hover,
   flex-shrink: 0;
 }
 
-.feed-avatar-tiny {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
+.feed-avatar-initials.sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  font-size: 10px;
 }
+
 
 .feed-user-details {
   display: flex;
@@ -927,21 +931,52 @@ button.primary:hover,
   margin: 0;
 }
 
-/* Control Pane UI */
-.pane-control-title {
-  font-size: 15px;
-  font-weight: 800;
-  margin-bottom: 4px;
-  color: var(--text);
-  letter-spacing: -0.01em;
+.feed-user-identity {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-soft);
 }
 
-.pane-helper-text {
-  font-size: 12px;
+.identity-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
   color: var(--text-secondary);
-  line-height: 1.4;
-  margin-bottom: 16px;
+  opacity: 0.6;
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
 }
+
+.identity-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.identity-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.feed-form-full {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feed-field-minimal {
+  padding: 14px 18px;
+  font-size: 15px;
+}
+
+.feed-textarea-minimal {
+  padding: 16px 18px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
 
 
 .lock-btn-full {
