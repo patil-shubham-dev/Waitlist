@@ -1,107 +1,66 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { UserPlus, MessageCircle, ShieldCheck, Zap } from 'lucide-react';
+import { UserPlus, MessageCircle, ShieldCheck, Zap, ArrowUpRight } from 'lucide-react';
 
 type ActivityEvent = {
   id: string;
-  type: 'signup' | 'question' | 'admin_reply' | 'phase_change';
-  title: string;
-  detail: string;
-  timestamp: string;
+  type: 'signup' | 'question' | 'admin_reply' | 'roadmap_update';
+  content: string;
+  user_name?: string;
+  created_at: string;
 };
 
+function formatRelativeTime(date: string) {
+  const delta = Date.now() - new Date(date).getTime();
+  const seconds = Math.floor(delta / 1000);
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return new Date(date).toLocaleDateString();
+}
+
 export default function ActivityFeed() {
-  const [events, setEvents] = useState<ActivityEvent[]>([]);
+  const [activities, setActivities] = useState<ActivityEvent[]>([]);
+
+  const fetchActivities = async () => {
+    // Fetch latest signups and questions
+    const [signups, questions] = await Promise.all([
+      supabase.from('waitlist').select('id, name, created_at').order('created_at', { ascending: false }).limit(5),
+      supabase.from('suggestions').select('id, name, content, created_at').order('created_at', { ascending: false }).limit(5)
+    ]);
+
+    const mapped: ActivityEvent[] = [
+      ...(signups.data || []).map(s => ({
+        id: `s-${s.id}`,
+        type: 'signup' as const,
+        content: 'joined the waitlist',
+        user_name: s.name,
+        created_at: s.created_at
+      })),
+      ...(questions.data || []).map(q => ({
+        id: `q-${q.id}`,
+        type: 'question' as const,
+        content: `asked: "${q.content.substring(0, 40)}${q.content.length > 40 ? '...' : ''}"`,
+        user_name: q.name,
+        created_at: q.created_at
+      }))
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 10);
+
+    setActivities(mapped);
+  };
 
   useEffect(() => {
-    // Initial fetch of recent activity
-    const fetchRecent = async () => {
-      // Fetch signups
-      const { data: signups } = await supabase
-        .from('waitlist')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      // Fetch questions
-      const { data: questions } = await supabase
-        .from('questions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const combined: ActivityEvent[] = [
-        ...(signups || []).map(s => ({
-          id: s.id,
-          type: 'signup' as const,
-          title: 'New Signup',
-          detail: `${s.email} joined the waitlist`,
-          timestamp: s.created_at
-        })),
-        ...(questions || []).map(q => ({
-          id: q.id,
-          type: 'question' as const,
-          title: 'New Question',
-          detail: q.question.slice(0, 50) + (q.question.length > 50 ? '...' : ''),
-          timestamp: q.created_at
-        }))
-      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-      setEvents(combined.slice(0, 10));
-    };
-
-    fetchRecent();
-
-    // Subscribe to real-time changes
-    const channel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'waitlist' },
-        (payload) => {
-          const newEvent: ActivityEvent = {
-            id: payload.new.id,
-            type: 'signup',
-            title: 'New Signup',
-            detail: `${payload.new.email} joined the waitlist`,
-            timestamp: payload.new.created_at
-          };
-          setEvents(prev => [newEvent, ...prev].slice(0, 10));
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'questions' },
-        (payload) => {
-          const newEvent: ActivityEvent = {
-            id: payload.new.id,
-            type: 'question',
-            title: 'New Question',
-            detail: payload.new.question.slice(0, 50),
-            timestamp: payload.new.created_at
-          };
-          setEvents(prev => [newEvent, ...prev].slice(0, 10));
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    fetchActivities();
+    const sub = supabase.channel('activity-all').on('postgres_changes', { event: 'INSERT', schema: 'public' }, () => fetchActivities()).subscribe();
+    return () => { supabase.removeChannel(sub); };
   }, []);
 
   return (
-    <div className="panel">
-      <div className="panel-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <article className="panel activity-feed">
+      <div className="panel-header">
         <div>
-          <h2>Real-time Activity</h2>
-          <p>Live stream of system events</p>
-        </div>
-        <div className="live-indicator">
-          <div className="live-dot" />
-          Live
-        </div>
-      </div>
 
       <div className="activity-feed">
         {events.length === 0 ? (

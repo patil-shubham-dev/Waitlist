@@ -32,9 +32,7 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
 
         {activeTab === 'users' && <WaitlistTab />}
 
-        {activeTab === 'analytics' && <TelemetryTab />}
-
-        {activeTab === 'reports' && <AuditTab />}
+        {activeTab === 'security' && <AuditTab />}
       </main>
     </div>
   );
