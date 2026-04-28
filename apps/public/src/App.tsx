@@ -602,7 +602,7 @@ function App() {
           </div>
         </section>
 
-        <section id="questions" data-section="questions" className="page-section section-alt">
+        <section id="questions" data-section="questions" className="page-section section-alt questions-section">
           <div className="section-header">
             <span className="section-label">Feedback</span>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

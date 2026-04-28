@@ -290,6 +290,7 @@ a {
   width: min(var(--max-width), calc(100vw - 32px));
   margin: 0 auto;
   padding-top: 74px;
+  padding-bottom: 0;
   /* Clearance for fixed navbar */
 }
 
@@ -317,6 +318,13 @@ a {
 .page-section {
   padding: 0;
   margin-top: var(--space-3xl);
+}
+
+@media (min-width: 1024px) {
+  .questions-section {
+    padding-top: 40px;
+    padding-bottom: 40px; /* reduce overall height */
+  }
 }
 
 .section-alt {
@@ -558,6 +566,10 @@ button.primary:hover,
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.questions-section {
+  padding-bottom: 0;
+}
+
 .product-card {
   transition: transform var(--transition), box-shadow var(--transition);
 }
@@ -666,7 +678,7 @@ button.primary:hover,
   border-radius: 20px;
   border: 1px solid var(--border);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  overflow: hidden;
+  overflow: clip;
 }
 
 .questions-dual-pane {
@@ -686,14 +698,11 @@ button.primary:hover,
 
 .comment-window {
   overflow-y: auto;
-  overscroll-behavior: auto;
-  -webkit-overflow-scrolling: touch;
   padding: 24px;
   background: #fdfcfb;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  scroll-behavior: smooth;
   max-height: 520px; /* Controlled height */
   height: auto;
   border-radius: 16px;
@@ -703,8 +712,8 @@ button.primary:hover,
 
 @media (min-width: 1024px) {
   .comment-window {
-    height: 540px; /* more space */
-    max-height: 540px;
+    height: 460px; /* reduced from 540px */
+    max-height: 460px;
     overflow-y: auto;
   }
 }
@@ -731,6 +740,7 @@ button.primary:hover,
 @media (min-width: 1024px) {
   .input-panel {
     max-width: 360px;
+    padding-bottom: 12px;
   }
 }
 
@@ -764,9 +774,7 @@ button.primary:hover,
     border: 1px solid var(--border);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
     border-right: none;
-    scroll-behavior: smooth;
     overscroll-behavior: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .feed-list {
@@ -1185,7 +1193,7 @@ button.primary:hover,
 
 @media (min-width: 1024px) {
   .feed-textarea-minimal {
-    min-height: 110px; /* reduced */
+    min-height: 90px; /* tighter, reduced from 110px */
   }
 }
 
@@ -1841,7 +1849,7 @@ select option {
 /* Footer System */
 .footer {
   width: min(var(--max-width), calc(100vw - 32px));
-  margin: 40px auto 0;
+  margin: 24px auto 0; /* reduced from 40px */
   padding: 48px 0 64px;
   border-top: 1px solid var(--border);
   display: flex;
@@ -1852,7 +1860,8 @@ select option {
 }
 
 .waitlist-section {
-  padding-bottom: 40px;
+  padding-bottom: 24px; /* reduced from 40px */
+  margin-bottom: 24px; /* reduced gap */
 }
 
 
@@ -1921,6 +1930,7 @@ select option {
     align-items: center; /* Vertically center branding relative to content */
     text-align: right;
     padding: 64px 0 80px;
+    margin-top: 24px; /* reduce top margin */
     gap: 40px;
   }
 
