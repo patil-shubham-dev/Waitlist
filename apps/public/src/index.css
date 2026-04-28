@@ -1085,6 +1085,140 @@ select option {
   }
 }
 
+/* Waitlist Confirmation (Reward State) */
+.waitlist-form-container {
+  position: relative;
+  min-height: 480px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.registration-reward-block {
+  width: 100%;
+  padding: 48px;
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.reward-icon-shell {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 107, 0, 0.06);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+}
+
+.reward-icon {
+  animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.reward-sparkle {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  color: #fbbf24;
+  animation: sparkleRotate 2s linear infinite;
+}
+
+.reward-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+}
+
+.reward-main-msg {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 380px;
+  margin: 0;
+}
+
+.reward-supporting-lines {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reward-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.reward-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 7px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* Animations */
+.animate-reward-in {
+  animation: rewardEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-form-out {
+  animation: formExit 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes rewardEntrance {
+  from { opacity: 0; transform: translateY(30px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes formExit {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes sparkleRotate {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@media (max-width: 768px) {
+  .registration-reward-block {
+    padding: 32px 24px;
+    gap: 20px;
+  }
+  
+  .reward-title {
+    font-size: 24px;
+  }
+  
+  .reward-main-msg {
+    font-size: 15px;
+  }
+
+  .waitlist-form-container {
+    min-height: 400px;
+  }
+}
+
 /* Footer System */
 .footer {
   width: min(var(--max-width), calc(100vw - 32px));

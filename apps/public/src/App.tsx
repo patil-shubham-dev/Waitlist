@@ -398,10 +398,15 @@ function App() {
 
     setJoinState('success');
     setWaitlistCount((current) => current + 1);
+    
     const visitor = { name: payload.name, email: payload.email, role: payload.role };
     writeVisitorCookie(visitor);
-    setRegisteredVisitor(visitor);
-    setJoinForm({ name: '', email: '', role: 'student' });
+    
+    // Delay setting registered visitor to allow 'animate-form-out' to play
+    setTimeout(() => {
+      setRegisteredVisitor(visitor);
+      setJoinForm({ name: '', email: '', role: 'student' });
+    }, 500);
   };
 
   const handleQuestionSubmit = async (event: React.FormEvent) => {
@@ -792,73 +797,116 @@ function App() {
           <div className="waitlist-layout">
             <div className="waitlist-content">
               <span className="section-label">Waitlist</span>
-              <h2 className="waitlist-title">{PRODUCT_COPY.ctaTitle}</h2>
-              <p className="waitlist-desc">{PRODUCT_COPY.ctaBody}</p>
-              <p className="waitlist-note">{PRODUCT_COPY.ctaTrust}</p>
+              <h2 className="waitlist-title">
+                {registeredVisitor ? "You're on the list" : PRODUCT_COPY.ctaTitle}
+              </h2>
+              <p className="waitlist-desc">
+                {registeredVisitor 
+                  ? "Your spot in the LifeOS ecosystem is reserved." 
+                  : PRODUCT_COPY.ctaBody
+                }
+              </p>
+              {!registeredVisitor && <p className="waitlist-note">{PRODUCT_COPY.ctaTrust}</p>}
             </div>
 
-            <div className="waitlist-form">
-              <form className="form-container" onSubmit={handleJoin}>
-                <label className="field">
-                  <span>Name</span>
-                  <input
-                    value={joinForm.name}
-                    onChange={(event) => setJoinForm((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="Your name"
-                  />
-                </label>
-                <label className="field">
-                  <span>Email</span>
-                  <input
-                    type="email"
-                    value={joinForm.email}
-                    onChange={(event) => setJoinForm((current) => ({ ...current, email: event.target.value }))}
-                    placeholder="you@example.com"
-                    required
-                  />
-                </label>
-                <div className="field custom-select">
-                  <span>Role</span>
-                  <div className="custom-select-wrapper">
-                    <button
-                      type="button"
-                      className={`custom-select-trigger ${isRoleOpen ? 'open' : ''}`}
-                      onClick={() => setIsRoleOpen((prev) => !prev)}
-                    >
-                      <span className="selected-value">
-                        {ROLES.find(r => r.value === joinForm.role)?.label || 'Select your role'}
-                      </span>
-                      <ChevronDown size={16} className="trigger-arrow" />
-                    </button>
-
-                    {/* Unified Dropdown for Desktop & Mobile */}
-                    <div className={`custom-select-dropdown ${isRoleOpen ? 'show' : ''}`}>
-                      {ROLES.map((role) => (
-                        <button
-                          key={role.value}
-                          type="button"
-                          className={`dropdown-option ${joinForm.role === role.value ? 'selected' : ''}`}
-                          onClick={() => {
-                            setJoinForm(prev => ({ ...prev, role: role.value }));
-                            setIsRoleOpen(false);
-                          }}
-                        >
-                          {role.label}
-                        </button>
-                      ))}
+            <div className="waitlist-form-container">
+              {registeredVisitor ? (
+                <div className="registration-reward-block animate-reward-in">
+                  <div className="reward-icon-shell">
+                    <CheckCircle2 size={32} className="reward-icon" />
+                    <Sparkles size={16} className="reward-sparkle" />
+                  </div>
+                  
+                  <div className="reward-content">
+                    <h3 className="reward-title">Welcome aboard 🔥</h3>
+                    <p className="reward-main-msg">
+                      We’ll send you an email shortly to complete your registration and unlock access.
+                    </p>
+                    
+                    <div className="reward-supporting-lines">
+                      <div className="reward-line">
+                        <div className="reward-dot" />
+                        <span>You’re now on the early access list.</span>
+                      </div>
+                      <div className="reward-line">
+                        <div className="reward-dot" />
+                        <span>We’ll notify you as soon as your access is ready.</span>
+                      </div>
+                      <div className="reward-line">
+                        <div className="reward-dot" />
+                        <span>No spam. Only important updates.</span>
+                      </div>
+                      <div className="reward-line">
+                        <div className="reward-dot" />
+                        <span>Get ready to experience LifeOS before everyone else.</span>
+                      </div>
                     </div>
-                    <div 
-                      className={`custom-select-overlay ${isRoleOpen ? 'show' : ''}`} 
-                      onClick={() => setIsRoleOpen(false)} 
-                    />
                   </div>
                 </div>
-                <button className="button button-primary button-full" type="submit" disabled={joinState === 'loading'}>
-                  {joinState === 'loading' ? 'Joining...' : PRODUCT_COPY.navCta}
-                </button>
-                {joinState === 'success' && <p className="feedback success">You are in. This browser is now ready for questions too.</p>}
-                {joinState === 'error' && <p className="feedback error">That signup failed. If you already joined, try another email.</p>}
-              </form>
+              ) : (
+                <div className={`waitlist-form ${joinState === 'success' ? 'animate-form-out' : ''}`}>
+                  <form className="form-container" onSubmit={handleJoin}>
+                    <label className="field">
+                      <span>Name</span>
+                      <input
+                        value={joinForm.name}
+                        onChange={(event) => setJoinForm((current) => ({ ...current, name: event.target.value }))}
+                        placeholder="Your name"
+                        required
+                      />
+                    </label>
+                    <label className="field">
+                      <span>Email</span>
+                      <input
+                        type="email"
+                        value={joinForm.email}
+                        onChange={(event) => setJoinForm((current) => ({ ...current, email: event.target.value }))}
+                        placeholder="you@example.com"
+                        required
+                      />
+                    </label>
+                    <div className="field custom-select">
+                      <span>Role</span>
+                      <div className="custom-select-wrapper">
+                        <button
+                          type="button"
+                          className={`custom-select-trigger ${isRoleOpen ? 'open' : ''}`}
+                          onClick={() => setIsRoleOpen((prev) => !prev)}
+                        >
+                          <span className="selected-value">
+                            {ROLES.find(r => r.value === joinForm.role)?.label || 'Select your role'}
+                          </span>
+                          <ChevronDown size={16} className="trigger-arrow" />
+                        </button>
+
+                        <div className={`custom-select-dropdown ${isRoleOpen ? 'show' : ''}`}>
+                          {ROLES.map((role) => (
+                            <button
+                              key={role.value}
+                              type="button"
+                              className={`dropdown-option ${joinForm.role === role.value ? 'selected' : ''}`}
+                              onClick={() => {
+                                setJoinForm(prev => ({ ...prev, role: role.value }));
+                                setIsRoleOpen(false);
+                              }}
+                            >
+                              {role.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div 
+                          className={`custom-select-overlay ${isRoleOpen ? 'show' : ''}`} 
+                          onClick={() => setIsRoleOpen(false)} 
+                        />
+                      </div>
+                    </div>
+                    <button className="button button-primary button-full" type="submit" disabled={joinState === 'loading'}>
+                      {joinState === 'loading' ? 'Joining...' : PRODUCT_COPY.navCta}
+                    </button>
+                    {joinState === 'error' && <p className="feedback error">That signup failed. If you already joined, try another email.</p>}
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </section>
