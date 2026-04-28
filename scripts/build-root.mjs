@@ -4,8 +4,9 @@ import { resolve } from 'node:path';
 const root = process.cwd();
 const publicDist = resolve(root, 'apps/public/dist');
 const adminDist = resolve(root, 'apps/admin/dist');
-const outputDist = resolve(root, 'dist');
+const outputDist = resolve(root, '.next');
 const outputAdmin = resolve(outputDist, 'admin7276');
+
 
 if (!existsSync(publicDist)) {
   throw new Error('Public build output was not found.');
