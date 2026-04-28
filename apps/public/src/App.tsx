@@ -49,6 +49,29 @@ function formatDisplayName(email?: string, name?: string) {
   }
 }
 
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}
+
+function getAvatarColor(name: string) {
+  const colors = [
+    '#F97316', '#EA580C', '#16794b', '#2563eb', 
+    '#7c3aed', '#db2777', '#059669', '#d97706'
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+
 const NAV_ITEMS = [
   { id: 'why', label: 'Why LifeOS' },
   { id: 'loop', label: 'Core Loop' },
@@ -317,10 +340,15 @@ function App() {
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const feedRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom of feed
+  // Smart auto-scroll logic
   useEffect(() => {
     if (feedRef.current) {
-      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+      const container = feedRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      
+      if (isNearBottom || questions.length <= 1) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
   }, [questions]);
 
@@ -579,7 +607,13 @@ function App() {
         <section id="questions" data-section="questions" className="page-section section-alt">
           <div className="section-header">
             <span className="section-label">Feedback</span>
-            <h2>{PRODUCT_COPY.questionsTitle}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2>{PRODUCT_COPY.questionsTitle}</h2>
+              <div className="live-pill">
+                <span className="live-dot" />
+                Live
+              </div>
+            </div>
             <p>{PRODUCT_COPY.questionsBody}</p>
           </div>
 
@@ -593,42 +627,49 @@ function App() {
                   </div>
                 ) : (
                   <div className="feed-list">
-                    {questions.map((q) => (
-                      <div key={q.id} className={`feed-item-thread ${q.is_featured ? 'featured-item' : ''}`}>
-                        <div className="feed-user-meta">
-                          <img 
-                            src={q.author_avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${q.email}`} 
-                            alt="" 
-                            className="feed-avatar" 
-                          />
-                          <div className="feed-user-details">
-                            <span className="feed-author">
-                              {formatDisplayName(q.email, q.author_name || q.name || undefined)}
-                            </span>
-                            <span className="feed-time">{formatRelativeDate(q.created_at)}</span>
-                          </div>
-                          {q.is_featured && <span className="feed-badge-featured">Featured Thread</span>}
-                        </div>
-                        
-                        <div className="feed-bubble">
-                          {q.title && <h3 className="feed-bubble-title">{q.title}</h3>}
-                          <p className="feed-bubble-content">{q.content}</p>
-                        </div>
-
-                        {q.admin_response && (
-                          <div className="feed-admin-reply">
-                            <div className="feed-user-meta min">
-                              <img src={q.admin_avatar_url || '/assets/logo-mark.jpg'} alt="" className="feed-avatar-tiny" />
-                              <div className="feed-user-details">
-                                <span className="feed-author">LifeOS Team</span>
-                                <span className="feed-badge-official">Official Reply</span>
+                    {questions.map((q) => {
+                      const name = formatDisplayName(q.email, q.author_name || q.name || undefined);
+                      return (
+                        <div key={q.id} className={`feed-item-thread ${q.is_featured ? 'featured-item' : ''} animate-message-in`}>
+                          <div className="feed-user-meta">
+                            <div 
+                              className="feed-avatar-initials"
+                              style={{ backgroundColor: getAvatarColor(name) }}
+                            >
+                              {getInitials(name)}
+                            </div>
+                            <div className="feed-user-details">
+                              <div className="feed-header-line">
+                                <span className="feed-author">{name}</span>
+                                <span className="feed-dot-separator">·</span>
+                                <span className="feed-time">{formatRelativeDate(q.created_at)}</span>
                               </div>
                             </div>
-                            <p className="feed-reply-content">{q.admin_response}</p>
+                            {q.is_featured && <span className="feed-badge-featured">Featured</span>}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          
+                          <div className="feed-bubble">
+                            {q.title && <h3 className="feed-bubble-title">{q.title}</h3>}
+                            <p className="feed-bubble-content">{q.content}</p>
+                          </div>
+
+                          {q.admin_response && (
+                            <div className="feed-admin-reply">
+                              <div className="feed-user-meta min">
+                                <img src={q.admin_avatar_url || '/assets/logo-mark.jpg'} alt="" className="feed-avatar-tiny" />
+                                <div className="feed-user-details">
+                                  <div className="feed-header-line">
+                                    <span className="feed-author">LifeOS Team</span>
+                                    <span className="feed-badge-official">Official Reply</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="feed-reply-content">{q.admin_response}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -637,9 +678,9 @@ function App() {
                 <div className="pane-inner">
                   {questionState === 'success' ? (
                     <div className="feed-post-confirmation">
-                      <div className="conf-icon"><CheckCircle2 size={24} /></div>
-                      <span>Question posted to the wall!</span>
-                      <button className="text-btn" onClick={() => setQuestionState('idle')}>Post another</button>
+                      <div className="conf-icon">✓</div>
+                      <span>Posted to the wall</span>
+                      <button className="text-btn" onClick={() => setQuestionState('idle')}>Ask another</button>
                     </div>
                   ) : (
                     <div className="feed-input-flex">
@@ -653,31 +694,46 @@ function App() {
                         <div className="feed-input-composer">
                           <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
                             <div className="feed-form-header">
-                              <span className="form-label">Post to the wall</span>
+                              <h3 className="pane-control-title">Ask a question or share feedback</h3>
+                              <p className="pane-helper-text">Be specific. Clear questions get better answers.</p>
                             </div>
                             <input
                               className="feed-field-minimal"
                               value={questionForm.title}
-                              onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
+                              onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value.substring(0, 50) }))}
                               placeholder="Topic (optional)"
                               autoComplete="off"
                             />
-                            <textarea
-                              className="feed-textarea-minimal"
-                              value={questionForm.content}
-                              onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
-                              placeholder="Your question or feedback..."
-                              required
-                              rows={5}
-                            />
+                            <div className="textarea-wrapper">
+                              <textarea
+                                className="feed-textarea-minimal"
+                                value={questionForm.content}
+                                onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
+                                placeholder="Your question or feedback..."
+                                required
+                                rows={5}
+                              />
+                              <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
+                                {questionForm.content.length}/280
+                              </span>
+                            </div>
                             <div className="feed-form-actions">
                               <button 
                                 type="submit" 
                                 className="button button-primary button-full" 
                                 disabled={questionState === 'loading' || !questionForm.content.trim()}
                               >
-                                {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
-                                <Send size={16} />
+                                {questionState === 'loading' ? (
+                                  <>
+                                    <div className="spinner-mini" />
+                                    Posting...
+                                  </>
+                                ) : (
+                                  <>
+                                    Post to the wall
+                                    <Send size={16} />
+                                  </>
+                                )}
                               </button>
                             </div>
                           </form>

@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { 
   Search, Filter, SortDesc, Pin, 
   Eye, EyeOff, Trash2, MoreHorizontal,
-  ChevronRight, MessageCircle
+  ChevronRight, MessageCircle, Send, Check
 } from 'lucide-react';
 import { adminGet, adminPost, type QuestionRecord } from '../../lib/adminApi';
 
@@ -11,12 +11,26 @@ interface QuestionsTabProps {
   selectedId: string | null;
 }
 
+const TOAST_DURATION = 3000;
+
 export default function QuestionsTab({ onSelect, selectedId }: QuestionsTabProps) {
   const [items, setItems] = useState<QuestionRecord[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [isBusy, setIsBusy] = useState(false);
+  const [isActionBusy, setIsActionBusy] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
+
+
+  const showToast = useCallback((message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, TOAST_DURATION);
+  }, []);
 
   const load = async () => {
     setIsBusy(true);
@@ -25,6 +39,7 @@ export default function QuestionsTab({ onSelect, selectedId }: QuestionsTabProps
       setItems(data.items);
     } catch (err) {
       console.error(err);
+      showToast('Failed to load questions');
     } finally {
       setIsBusy(false);
     }
@@ -33,6 +48,16 @@ export default function QuestionsTab({ onSelect, selectedId }: QuestionsTabProps
   useEffect(() => {
     load();
   }, []);
+
+  const selectedItem = useMemo(() => 
+    items.find(i => i.id === selectedId),
+  [items, selectedId]);
+
+  useEffect(() => {
+    if (selectedItem) {
+      setReplyText(selectedItem.admin_response || '');
+    }
+  }, [selectedId, selectedItem]);
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
@@ -45,17 +70,57 @@ export default function QuestionsTab({ onSelect, selectedId }: QuestionsTabProps
     });
   }, [items, search, statusFilter, typeFilter]);
 
-  const handleAction = async (e: React.MouseEvent, action: string, item: QuestionRecord) => {
-    e.stopPropagation();
-    if (action === 'delete') {
-      if (!window.confirm('Delete this post?')) return;
-      await adminPost('delete-question', { id: item.id });
-    } else if (action === 'feature') {
-      await adminPost('toggle-question-featured', { id: item.id, isFeatured: !item.is_featured });
-    } else if (action === 'visibility') {
-      await adminPost('toggle-question-visibility', { id: item.id, isPublic: !item.is_public });
+  const handleAction = async (e: React.MouseEvent | null, action: string, item: QuestionRecord) => {
+    e?.stopPropagation();
+    setIsActionBusy(true);
+    try {
+      if (action === 'delete') {
+        if (!window.confirm('Delete this post?')) return;
+        await adminPost('delete-question', { id: item.id });
+        setItems(prev => prev.filter(i => i.id !== item.id));
+        if (selectedId === item.id) onSelect('');
+        showToast('Deleted successfully');
+      } else if (action === 'feature') {
+        await adminPost('toggle-question-featured', { id: item.id, isFeatured: !item.is_featured });
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_featured: !i.is_featured } : i));
+      } else if (action === 'visibility') {
+        await adminPost('toggle-question-visibility', { id: item.id, isPublic: !item.is_public });
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_public: !i.is_public } : i));
+      }
+    } catch (err) {
+      showToast('Action failed');
+    } finally {
+      setIsActionBusy(false);
     }
-    load();
+  };
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem || !replyText.trim()) return;
+
+    setIsActionBusy(true);
+    try {
+      await adminPost('reply-question', {
+        id: selectedItem.id,
+        adminResponse: replyText,
+        status: 'answered',
+        isFeatured: selectedItem.is_featured,
+        isPublic: selectedItem.is_public
+      });
+      
+      setItems(prev => prev.map(i => i.id === selectedId ? { 
+        ...i, 
+        admin_response: replyText, 
+        status: 'answered',
+        admin_responded_at: new Date().toISOString()
+      } : i));
+      
+      showToast('Reply sent');
+    } catch (err) {
+      showToast('Failed to send reply');
+    } finally {
+      setIsActionBusy(false);
+    }
   };
 
   return (
@@ -167,27 +232,72 @@ export default function QuestionsTab({ onSelect, selectedId }: QuestionsTabProps
         </div>
       </div>
 
-      <aside className="panel" style={{ height: 'fit-content', position: 'sticky', top: '40px' }}>
-        <div className="panel-header">
-          <h2>Thread Context</h2>
-          <p>Quick filters and moderation tools</p>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div className="stat-label">Sort by</div>
-          <select style={{ width: '100%' }}>
-            <option>Newest first</option>
-            <option>Oldest first</option>
-            <option>Most helpful</option>
-          </select>
-          
-          <div className="stat-label" style={{ marginTop: '12px' }}>Bulk Actions</div>
-          <button className="sidebar-link" style={{ border: '1px solid var(--border)' }}>
-             <Trash2 size={16} />
-             <span>Delete Selected</span>
-          </button>
+      <aside className="mod-aside" style={{ position: 'sticky', top: '0' }}>
+        {selectedItem ? (
+          <div className="tab-stack">
+            <div className="panel">
+              <div className="panel-header" style={{ marginBottom: '16px' }}>
+                <span className="stat-label">MODERATION PANEL</span>
+                <h2 style={{ marginTop: '8px' }}>Thread Detail</h2>
+              </div>
+
+              <div className="mod-detail-card" style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', marginBottom: '8px' }}>POST CONTENT</div>
+                <p style={{ fontSize: '14px', lineHeight: 1.5, color: 'var(--text)' }}>
+                  {selectedItem.content}
+                </p>
+              </div>
+
+              <form className="mod-reply-form" onSubmit={handleReply}>
+                <div className="stat-label">Response</div>
+                <textarea 
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Type your official response..."
+                  rows={6}
+                  required
+                  disabled={isActionBusy}
+                />
+                <button 
+                  type="submit" 
+                  className="button-primary" 
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  disabled={isActionBusy || !replyText.trim() || replyText === selectedItem.admin_response}
+                >
+                  {isActionBusy ? <div className="spinner" /> : <Send size={16} />}
+                  <span>{selectedItem.admin_response ? 'Update Reply' : 'Send Response'}</span>
+                </button>
+              </form>
+            </div>
+
+            <div className="panel mod-actions">
+              <div className="stat-label">Critical Actions</div>
+              <button 
+                className="mod-delete-btn"
+                onClick={() => handleAction(null, 'delete', selectedItem)}
+                disabled={isActionBusy}
+              >
+                <Trash2 size={16} />
+                <span>Delete Thread</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="panel" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-faint)' }}>
+            <MessageCircle size={32} strokeWidth={1} style={{ marginBottom: '12px', opacity: 0.3 }} />
+            <p style={{ fontSize: '13px' }}>Select a thread to moderate</p>
+          </div>
+        )}
+
+        <div className="toast-container">
+          {toasts.map(toast => (
+            <div key={toast.id} className="toast">
+              {toast.message}
+            </div>
+          ))}
         </div>
       </aside>
     </div>
   );
 }
+
