@@ -746,34 +746,34 @@ function App() {
                                 placeholder="Topic (optional)"
                                 autoComplete="off"
                               />
-                              <div className="feed-input-row">
-                                <div className="textarea-wrapper">
-                                  <textarea
-                                    className="feed-textarea-minimal"
-                                    value={questionForm.content}
-                                    onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
-                                    placeholder="Your question or feedback..."
-                                    required
-                                    rows={3}
-                                  />
-                                  <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
-                                    {questionForm.content.length}/280
-                                  </span>
-                                </div>
-                                <div className="feed-form-actions">
-                                  <button 
-                                    type="submit" 
-                                    className="button button-primary button-full" 
-                                    disabled={questionState === 'loading' || !questionForm.content.trim()}
-                                  >
-                                    {questionState === 'loading' ? (
-                                      <div className="spinner-mini" />
-                                    ) : (
-                                      <Send size={18} />
-                                    )}
-                                    <span>Post</span>
-                                  </button>
-                                </div>
+                              <div className="textarea-wrapper">
+                                <textarea
+                                  className="feed-textarea-minimal"
+                                  value={questionForm.content}
+                                  onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
+                                  placeholder="Your question or feedback..."
+                                  required
+                                  rows={3}
+                                />
+                                <span className={`char-counter ${questionForm.content.length >= 280 ? 'limit' : ''}`}>
+                                  {questionForm.content.length}/280
+                                </span>
+                              </div>
+                              <div className="feed-form-actions">
+                                <button 
+                                  type="submit" 
+                                  className="button button-primary button-full" 
+                                  disabled={questionState === 'loading' || !questionForm.content.trim()}
+                                >
+                                  {questionState === 'loading' ? (
+                                    <div className="spinner-mini" />
+                                  ) : (
+                                    <>
+                                      Post feedback
+                                      <Send size={16} />
+                                    </>
+                                  )}
+                                </button>
                               </div>
                             </div>
                           </form>
