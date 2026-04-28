@@ -19,7 +19,7 @@ import {
   X,
   Send,
 } from 'lucide-react';
-import { supabase, type Suggestion } from './lib/supabase';
+import { supabase, type Suggestion, type TimelineEntry } from './lib/supabase';
 import { useVisitTracker } from './hooks/useVisitTracker';
 
 function formatRelativeDate(date: string) {
@@ -568,7 +568,7 @@ function App() {
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <div className="point-list">
-                  {item.items?.map((point) => (
+                  {item.items?.map((point: string) => (
                     <span key={point}>{point}</span>
                   ))}
                 </div>
@@ -585,8 +585,8 @@ function App() {
           </div>
 
           <div className="questions-container-unified">
-            <div className="contained-questions-window">
-              <div className="feed-scroll-area" ref={feedRef}>
+            <div className="questions-dual-pane">
+              <div className="feed-view-pane" ref={feedRef}>
                 {questions.length === 0 ? (
                   <div className="feed-empty-state">
                     <MessageSquareText size={48} strokeWidth={1} />
@@ -634,69 +634,72 @@ function App() {
                 )}
               </div>
 
-              <div className="contained-input-shell">
-                {questionState === 'success' ? (
-                  <div className="feed-post-confirmation">
-                    <div className="conf-icon"><CheckCircle2 size={24} /></div>
-                    <span>Question posted to the wall!</span>
-                    <button className="text-btn" onClick={() => setQuestionState('idle')}>Post another</button>
-                  </div>
-                ) : (
-                  <div className="feed-input-flex">
-                    {!registeredVisitor ? (
-                      <div className="feed-input-locked" onClick={() => sectionScroll('waitlist')}>
-                        <span className="lock-text">Become a member to join the conversation</span>
-                        <div className="lock-btn">Register</div>
-                      </div>
-                    ) : (
-                      <div className={`feed-input-composer ${showFullInput ? 'expanded' : ''}`}>
-                        {!showFullInput ? (
-                          <div className="feed-input-trigger" onClick={() => setShowFullInput(true)}>
-                            <div className="user-dot" />
-                            <span className="trigger-placeholder">
-                              Ask {registeredVisitor.name.split(' ')[0]}...
-                            </span>
-                            <Send size={18} className="trigger-icon" />
-                          </div>
-                        ) : (
-                          <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
-                            <div className="feed-form-header">
-                              <span>New Question</span>
-                              <button type="button" onClick={() => setShowFullInput(false)} className="close-mini"><X size={16} /></button>
+              <div className="feed-control-pane">
+                <div className="pane-inner">
+                  {questionState === 'success' ? (
+                    <div className="feed-post-confirmation">
+                      <div className="conf-icon"><CheckCircle2 size={24} /></div>
+                      <span>Question posted to the wall!</span>
+                      <button className="text-btn" onClick={() => setQuestionState('idle')}>Post another</button>
+                    </div>
+                  ) : (
+                    <div className="feed-input-flex">
+                      {!registeredVisitor ? (
+                        <div className="feed-input-locked" onClick={() => sectionScroll('waitlist')}>
+                          <h4 className="pane-status-title">Join conversation</h4>
+                          <p className="pane-helper-text">Become a member to post your thoughts and ask questions.</p>
+                          <div className="lock-btn-full">Register</div>
+                        </div>
+                      ) : (
+                        <div className={`feed-input-composer ${showFullInput ? 'expanded' : ''}`}>
+                          {!showFullInput ? (
+                            <div className="feed-input-trigger" onClick={() => setShowFullInput(true)}>
+                              <div className="user-dot" />
+                              <span className="trigger-placeholder">
+                                Ask {registeredVisitor.name.split(' ')[0]}...
+                              </span>
+                              <Send size={18} className="trigger-icon" />
                             </div>
-                            <input
-                              className="feed-field-minimal"
-                              value={questionForm.title}
-                              onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
-                              placeholder="Title (optional)"
-                              autoComplete="off"
-                            />
-                            <textarea
-                              className="feed-textarea-minimal"
-                              value={questionForm.content}
-                              onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
-                              placeholder="What's on your mind?"
-                              required
-                              rows={3}
-                              autoFocus
-                            />
-                            <div className="feed-form-actions">
-                              <p className="feed-helper">Keep it productive. All posts are public.</p>
-                              <button 
-                                type="submit" 
-                                className="feed-submit-btn" 
-                                disabled={questionState === 'loading' || !questionForm.content.trim()}
-                              >
-                                {questionState === 'loading' ? 'Sending...' : 'Send'}
-                                <Send size={16} />
-                              </button>
-                            </div>
-                          </form>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                          ) : (
+                            <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
+                              <div className="feed-form-header">
+                                <span className="form-label">New Question</span>
+                                <button type="button" onClick={() => setShowFullInput(false)} className="close-mini"><X size={16} /></button>
+                              </div>
+                              <input
+                                className="feed-field-minimal"
+                                value={questionForm.title}
+                                onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value }))}
+                                placeholder="Short topic..."
+                                autoComplete="off"
+                              />
+                              <textarea
+                                className="feed-textarea-minimal"
+                                value={questionForm.content}
+                                onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value }))}
+                                placeholder="What's on your mind?"
+                                required
+                                rows={4}
+                                autoFocus
+                              />
+                              <div className="feed-form-actions">
+                                <button 
+                                  type="submit" 
+                                  className="feed-submit-btn-full" 
+                                  disabled={questionState === 'loading' || !questionForm.content.trim()}
+                                >
+                                  {questionState === 'loading' ? 'Posting...' : 'Post to the wall'}
+                                  <Send size={16} />
+                                </button>
+                                <p className="feed-helper-nano">Public posting is final. Be productive.</p>
+                              </div>
+                            </form>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

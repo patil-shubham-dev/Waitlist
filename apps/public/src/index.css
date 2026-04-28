@@ -661,10 +661,35 @@ button.primary:hover,
   overflow: hidden;
 }
 
-.contained-questions-window {
+.questions-dual-pane {
+  display: flex;
+  height: 520px; /* Reduced fixed height */
+}
+
+.feed-view-pane {
+  flex: 0 0 72%;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fdfcfb;
   display: flex;
   flex-direction: column;
-  height: 600px; /* FIXED HEIGHT */
+  gap: 20px;
+  scroll-behavior: smooth;
+  border-right: 1px solid var(--border);
+}
+
+.feed-control-pane {
+  flex: 1;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.pane-inner {
+  padding: 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 768px) {
@@ -675,27 +700,28 @@ button.primary:hover,
     border-right: none;
   }
   
-  .contained-questions-window {
-    height: 70vh; /* Responsive height for mobile */
+  .questions-dual-pane {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .feed-view-pane {
+    flex: none;
+    height: 60vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .feed-control-pane {
+    flex: none;
   }
 }
 
-.feed-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  background: #fcfbf9;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  scroll-behavior: smooth;
-}
-
 /* Custom Scrollbar */
-.feed-scroll-area::-webkit-scrollbar {
+.feed-view-pane::-webkit-scrollbar {
   width: 6px;
 }
-.feed-scroll-area::-webkit-scrollbar-thumb {
+.feed-view-pane::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.08);
   border-radius: 10px;
 }
@@ -703,16 +729,15 @@ button.primary:hover,
 .feed-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   width: 100%;
 }
 
 .feed-item-thread {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-width: 85%;
-  align-self: flex-start;
+  gap: 10px;
+  max-width: 100%;
 }
 
 .feed-user-meta {
@@ -764,8 +789,8 @@ button.primary:hover,
 
 .feed-bubble {
   background: #ffffff;
-  padding: 14px 18px;
-  border-radius: 4px 20px 20px 20px;
+  padding: 12px 16px;
+  border-radius: 4px 16px 16px 16px;
   border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
@@ -778,24 +803,24 @@ button.primary:hover,
 .feed-bubble-title {
   font-size: 14px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   color: var(--text);
 }
 
 .feed-bubble-content {
   font-size: 14px;
   color: var(--text-secondary);
-  line-height: 1.55;
+  line-height: 1.5;
   margin: 0;
 }
 
 .feed-admin-reply {
-  margin-left: 20px;
-  padding-left: 16px;
+  margin-left: 16px;
+  padding-left: 14px;
   border-left: 2px solid rgba(255, 107, 0, 0.15);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .feed-badge-official {
@@ -815,56 +840,66 @@ button.primary:hover,
   margin: 0;
 }
 
-/* Stable Input Area */
-.contained-input-shell {
-  background: #ffffff;
-  border-top: 1px solid var(--border);
-  padding: 16px 20px;
-  position: sticky;
-  bottom: 0;
+/* Control Pane UI */
+.pane-status-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: var(--text);
 }
 
-.feed-post-confirmation {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #16794b;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.text-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--accent);
-  font-weight: 700;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.feed-input-locked {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f8f6f2;
-  padding: 8px 16px;
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.lock-text {
+.pane-helper-text {
   font-size: 13px;
   color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
-.lock-btn {
+.lock-btn-full {
   background: var(--text);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.lock-btn-full:hover {
+  transform: translateY(-1px);
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.feed-submit-btn-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 8px;
+  cursor: pointer;
+}
+
+.feed-helper-nano {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 10px;
+  text-align: center;
 }
 
 .feed-input-trigger {
