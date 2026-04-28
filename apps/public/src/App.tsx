@@ -346,6 +346,7 @@ function App() {
   });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const feedRef = useRef<HTMLDivElement>(null);
+  const [expandedMessages, setExpandedMessages] = useState<Record<string, boolean>>({});
 
 
 
@@ -662,23 +663,27 @@ function App() {
                     {questions.map((q) => {
                       const name = formatDisplayName(q.email, q.author_name || q.name || undefined);
                       return (
-                        <div key={q.id} className={`comment-card ${q.is_featured ? 'featured-item' : ''} animate-message-in`}>
-                          <div className="feed-user-meta">
-                            <div className="avatar" style={{ backgroundColor: getAvatarColor(name) }}>
-                              {getInitials(name)}
-                            </div>
-                            <div className="feed-user-details">
-                              <div className="feed-header-line">
-                                <span className="feed-author">{name}</span>
+                          <div 
+                            key={q.id} 
+                            className={`comment-card ${q.is_featured ? 'featured-item' : ''} ${expandedMessages[q.id] ? 'expanded' : ''} animate-message-in`}
+                            onClick={() => setExpandedMessages(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
+                          >
+                            <div className="feed-user-meta">
+                              <div className="avatar" style={{ backgroundColor: getAvatarColor(name) }}>
+                                {getInitials(name)}
+                              </div>
+                              <div className="feed-user-details">
+                                <div className="feed-header-line">
+                                  <span className="feed-author">{name}</span>
+                                  {q.is_featured && <span className="feed-badge-featured">Featured</span>}
+                                </div>
                               </div>
                             </div>
-                            {q.is_featured && <span className="feed-badge-featured">Featured</span>}
-                          </div>
-                          
-                          <div className="feed-bubble">
-                            {q.title && <h3 className="feed-bubble-title">{q.title}</h3>}
-                            <p className="feed-bubble-content">{q.content}</p>
-                          </div>
+                            
+                            <div className="feed-bubble">
+                              {q.title && <h3 className="feed-bubble-title">{q.title}</h3>}
+                              <p className="feed-bubble-content">{q.content}</p>
+                            </div>
 
                           {q.admin_response && (
                             <div className="feed-admin-reply">

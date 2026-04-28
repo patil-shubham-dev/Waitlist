@@ -852,17 +852,92 @@ button.primary:hover,
   }
 
   .feed-list {
-    gap: 24px;
+    gap: 18px; /* Tighter vertical stacking */
     padding-bottom: 20px;
   }
 
+  .comment-card {
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .feed-user-meta {
+    gap: 10px;
+    margin-bottom: 6px;
+    align-items: center;
+  }
+
+  .feed-user-meta .avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+
+  .feed-author {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .feed-badge-featured {
+    font-size: 9px;
+    padding: 1px 4px;
+    margin-left: 6px;
+  }
+
   .feed-bubble {
-    background: #f8f6f2;
-    padding: 12px 16px;
-    border-radius: 4px 16px 16px 16px;
+    background: transparent;
+    padding: 0;
+    margin-left: 38px; /* Align content under name, offset by avatar */
     border: none;
     box-shadow: none;
-    max-width: 90%;
+    max-width: 100%;
+  }
+
+  .feed-bubble-title {
+    font-size: 14px;
+    margin-bottom: 2px;
+    color: var(--text);
+  }
+
+  .feed-bubble-content {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Truncate to 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .expanded .feed-bubble-content {
+    -webkit-line-clamp: unset; /* Show full on tap */
+  }
+
+  /* Compact Admin Reply */
+  .feed-admin-reply {
+    margin-top: 10px;
+    margin-left: 38px;
+    padding: 8px 0 0 12px;
+    background: transparent;
+    border-left: 1px solid var(--border);
+    gap: 6px;
+  }
+
+  .feed-admin-reply .feed-user-meta {
+    margin-bottom: 2px;
+  }
+
+  .feed-admin-reply .avatar-logo {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .feed-reply-content {
+    font-size: 12px;
+    line-height: 1.4;
   }
 
   /* Sticky Input Bar Redesign */
