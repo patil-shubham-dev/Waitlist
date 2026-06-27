@@ -376,7 +376,7 @@ section{scroll-margin-top:80px}
 .pain-num{
   font-family:var(--serif);
   font-size:64px;font-weight:700;line-height:1;
-  color:rgba(232,98,10,0.07);
+  color:rgba(232,98,10,0.35);
   margin-bottom:10px;letter-spacing:-0.04em;
 }
 .pain-icon{
