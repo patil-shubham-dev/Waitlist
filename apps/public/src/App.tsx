@@ -1,789 +1,743 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ArrowRight,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Facebook,
-  Flame,
-  Instagram,
-  Mail,
-  Menu,
-  Heart,
-  MessageCircle,
-  MessageSquareText,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Trophy,
-  X,
-  Send,
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase, type Suggestion, type TimelineEntry } from './lib/supabase';
 import { useVisitTracker } from './hooks/useVisitTracker';
 
-function formatRelativeDate(date: string) {
-  const delta = Date.now() - new Date(date).getTime();
-  const minutes = Math.floor(delta / 1000 / 60);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+const VISITOR_KEY = 'lifeos_v4';
+
+function readVisitor(): { name: string; email: string; role?: string } | null {
+  try {
+    const fromLocal = localStorage.getItem(VISITOR_KEY);
+    if (fromLocal) return JSON.parse(fromLocal);
+    const cookie = document.cookie
+      .split('; ')
+      .find((c) => c.startsWith(`${VISITOR_KEY}=`))
+      ?.split('=')[1];
+    if (cookie) return JSON.parse(decodeURIComponent(cookie));
+  } catch { /* ignore */ }
+  return null;
 }
 
-function formatDisplayName(email?: string, name?: string) {
-  if (name && name.trim() && name.trim() !== 'Anonymous') return name;
-  if (!email) return 'User';
-  try {
-    const handle = email.split('@')[0];
-    const cleaned = handle.replace(/[0-9]/g, '').replace(/[._-]/g, ' ').trim();
-    if (!cleaned) return 'User';
-    return cleaned
-      .split(' ')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  } catch {
-    return 'User';
-  }
+function writeVisitor(v: { name: string; email: string; role?: string }) {
+  localStorage.setItem(VISITOR_KEY, JSON.stringify(v));
+  document.cookie = `${VISITOR_KEY}=${encodeURIComponent(JSON.stringify(v))}; path=/; max-age=${60 * 60 * 24 * 180}; samesite=lax`;
+}
+
+function goto(id: string) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function formatRelativeDate(date: string) {
+  const delta = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(delta / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function getInitials(name: string) {
-  const parts = name.trim().split(" ");
+  const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0][0].toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function getAvatarColor(name: string) {
-  const colors = [
-    '#F97316', '#EA580C', '#16794b', '#2563eb', 
-    '#7c3aed', '#db2777', '#059669', '#d97706'
-  ];
+  const colors = ['#e8620a', '#166534', '#6d28d9', '#0369a1', '#b91c1c', '#a16207', '#0f766e', '#be185d'];
   let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
 }
 
-
-const NAV_ITEMS = [
-  { id: 'why', label: 'Why LifeOS' },
-  { id: 'loop', label: 'Core Loop' },
-  { id: 'roadmap', label: 'Roadmap' },
-  { id: 'questions', label: 'Questions' },
-];
-
-const PRODUCT_COPY = {
-  navCta: 'Join the waitlist',
-  heroBadge: 'Execution-driven social productivity',
-  heroTitle: 'LifeOS turns action into visible progress.',
-  heroBody:
-    'Plan less. Execute more. LifeOS helps users act, prove their work, earn growth, and return the next day with momentum.',
-  heroPrimary: 'Get early access',
-  heroSecondary: 'Read the system',
-  problemTitle: 'Why LifeOS exists',
-  problemBody:
-    'Most productivity apps help you plan without pressure. Most social platforms keep you busy without progress. LifeOS connects execution, proof, and social accountability in one system.',
-  loopTitle: 'The LifeOS core loop',
-  loopBody:
-    'Action becomes visible, proof is validated, and progress compounds through streaks, XP, and public momentum.',
-  roadmapTitle: 'Roadmap built from the product system',
-  roadmapBody:
-    'The rollout follows the actual PRD: task execution first, validation and integrity next, then the full social layer around proof and growth.',
-  questionsTitle: 'Questions and product feedback',
-  questionsBody:
-    'Users can ask practical product questions or suggest improvements. Every reply stays visible so the launch page becomes a shared source of product clarity.',
-  ctaTitle: 'Join before the public launch',
-  ctaBody:
-    'Early users help shape the execution system, the proof loop, and the social layer before LifeOS opens publicly.',
-  ctaTrust: 'No spam. Only product updates.',
-  footer: 'Built for people who take action, prove progress, and return stronger.',
-};
-
-const PROBLEM_CARDS = [
-  {
-    icon: Target,
-    label: 'Execution',
-    title: 'Action-first system',
-    body: 'LifeOS is built around tasks getting done, not lists getting longer.',
-  },
-  {
-    icon: ShieldCheck,
-    label: 'Proof',
-    title: 'Proof-based progress',
-    body: 'Work must be visible and verifiable before it becomes growth.',
-  },
-  {
-    icon: Trophy,
-    label: 'Social',
-    title: 'Social accountability',
-    body: 'Consistency is reinforced through community, streaks, and public progress.',
-  },
-];
-
-const LOOP_CARDS = [
-  {
-    step: '01',
-    title: 'Consume',
-    body: 'See progress-driven content, not distraction.',
-  },
-  {
-    step: '02',
-    title: 'Act',
-    body: 'Start meaningful tasks with structure and intent.',
-  },
-  {
-    step: '03',
-    title: 'Prove',
-    body: 'Upload proof so AI can validate the effort.',
-  },
-  {
-    step: '04',
-    title: 'Earn',
-    body: 'Gain XP, streaks, and visible progress that compounds.',
-  },
-];
-
-const VISITOR_COOKIE = 'lifeos_visitor';
-
-function sectionScroll(id: string) {
-  if (id === 'top') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
-  }
-  
-  const target = document.getElementById(id);
-  if (target) {
-    target.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  }
-}
-
-function writeVisitorCookie(value: { name: string; email: string; role?: string }) {
-  const encoded = encodeURIComponent(JSON.stringify(value));
-  document.cookie = `${VISITOR_COOKIE}=${encoded}; path=/; max-age=${60 * 60 * 24 * 180}; samesite=lax`;
-  localStorage.setItem(VISITOR_COOKIE, JSON.stringify(value));
-}
-
-function readVisitorCookie() {
-  const cookieValue = document.cookie
-    .split('; ')
-    .find((item) => item.startsWith(`${VISITOR_COOKIE}=`))
-    ?.split('=')[1];
-
-  if (cookieValue) {
-    try {
-      return JSON.parse(decodeURIComponent(cookieValue)) as { name: string; email: string; role?: string };
-    } catch {
-      return null;
-    }
-  }
-
-  const localValue = localStorage.getItem(VISITOR_COOKIE);
-  if (!localValue) return null;
-
-  try {
-    return JSON.parse(localValue) as { name: string; email: string; role?: string };
-  } catch {
-    return null;
-  }
-}
-
-
-function Navbar({
-  activeSection,
-  ctaLabel,
-  compact,
-  onNavClick,
-}: {
-  activeSection: string;
-  ctaLabel: string;
-  compact: boolean;
-  onNavClick: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <header className={`navbar-shell ${compact ? 'compact' : ''}`}>
-      <nav className="navbar">
-        <a
-          className="brand-lockup"
-          href="#top"
-          onClick={(event) => {
-            event.preventDefault();
-            onNavClick('top');
-          }}
-        >
-          <img className="brand-mark" src="/assets/logo-mark.jpg" alt="LifeOS" />
-          <img className="brand-wordmark" src="/assets/logo-wordmark.svg" alt="LifeOS" />
-        </a>
-
-        <div className="nav-center">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-link ${activeSection === item.id ? 'active' : ''}`}
-              onClick={() => onNavClick(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="nav-actions">
-          <button className="button button-primary button-small" onClick={() => sectionScroll('waitlist')}>
-            {ctaLabel}
-          </button>
-          <button className={`menu-button ${open ? 'active' : ''}`} aria-label="Toggle navigation" onClick={() => setOpen((current) => !current)}>
-            {open ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-      </nav>
-
-      <div className={`mobile-backdrop ${open ? 'show' : ''}`} onClick={() => setOpen(false)} />
-
-      <aside className={`mobile-menu ${open ? 'open' : ''}`}>
-        <div className="mobile-menu-header">
-           <img className="brand-mark" src="/assets/logo-mark.jpg" alt="LifeOS" />
-           <button className="close-button" onClick={() => setOpen(false)}>
-             <X size={24} />
-           </button>
-        </div>
-
-        <div className="mobile-menu-links">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              className="mobile-menu-link"
-              onClick={() => {
-                setOpen(false);
-                onNavClick(item.id);
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mobile-menu-footer">
-          <button
-            className="button button-primary button-full"
-            onClick={() => {
-              setOpen(false);
-              onNavClick('waitlist');
-            }}
-          >
-            {ctaLabel}
-          </button>
-        </div>
-      </aside>
-    </header>
-  );
-}
+const NAV_ITEMS = ['problem', 'what', 'features', 'questions', 'roadmap'] as const;
 
 function App() {
   useVisitTracker();
 
   const [waitlistCount, setWaitlistCount] = useState(0);
-  const [questions, setQuestions] = useState<Suggestion[]>([]);
   const [roadmap, setRoadmap] = useState<TimelineEntry[]>([]);
-  const [isRoleOpen, setIsRoleOpen] = useState(false);
-  const [toasts, setToasts] = useState<{ id: number; message: string; type: 'success' | 'error' }[]>([]);
-
-  const addToast = (message: string, type: 'success' | 'error' = 'success') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 4000);
-  };
-
-  const ROLES = [
-    { value: 'student', label: 'Student' },
-    { value: 'founder', label: 'Founder' },
-    { value: 'creator', label: 'Creator' },
-    { value: 'operator', label: 'Operator' },
-    { value: 'professional', label: 'Professional' },
-    { value: 'other', label: 'Other' },
-  ];
-  
-  useEffect(() => {
-    const handleAnchorClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest('a');
-      
-      if (anchor && anchor.hash && anchor.origin === window.location.origin) {
-        const id = anchor.hash.replace('#', '');
-        if (id) {
-          e.preventDefault();
-          sectionScroll(id);
-        }
-      }
-    };
-
-    document.addEventListener('click', handleAnchorClick);
-    return () => document.removeEventListener('click', handleAnchorClick);
-  }, []);
-
   const [activeSection, setActiveSection] = useState('problem');
-  const [navCompact, setNavCompact] = useState(false);
+  const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
 
-  const [joinForm, setJoinForm] = useState({
-    name: '',
-    email: '',
-    role: 'student',
-  });
+  const [joinForm, setJoinForm] = useState({ name: '', email: '', role: 'student' });
   const [joinState, setJoinState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [registeredVisitor, setRegisteredVisitor] = useState<{ name: string; email: string; role?: string } | null>(null);
-
-  const [questionForm, setQuestionForm] = useState({
-    title: '',
-    content: '',
-  });
+  const [joinError, setJoinError] = useState('');
+  const [visitor, setVisitor] = useState(readVisitor());
+  const [questions, setQuestions] = useState<Suggestion[]>([]);
+  const [questionForm, setQuestionForm] = useState({ title: '', content: '' });
   const [questionState, setQuestionState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const feedRef = useRef<HTMLDivElement>(null);
-  const [expandedMessages, setExpandedMessages] = useState<Record<string, boolean>>({});
+  const [qError, setQError] = useState('');
+  const qScrollRef = useRef<HTMLDivElement>(null);
 
-
-
-  // Smart auto-scroll logic
-  useEffect(() => {
-    if (feedRef.current) {
-      const container = feedRef.current;
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-      
-      if (isNearBottom || questions.length <= 1) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
-  }, [questions]);
-
-  useEffect(() => {
-    setRegisteredVisitor(readVisitorCookie());
-  }, []);
+  const addToast = (msg: string) => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message: msg }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4200);
+  };
 
   useEffect(() => {
     const load = async () => {
-      const [{ count }, questionsRes, roadmapRes] = await Promise.all([
+      const [{ count }, rRes, qRes] = await Promise.all([
         supabase.from('waitlist').select('*', { count: 'exact', head: true }),
-        supabase
-          .from('suggestions')
-          .select('*')
-          .eq('is_public', true)
-          .order('is_featured', { ascending: false })
-          .order('created_at', { ascending: true })
-          .limit(50),
-        supabase
-          .from('timeline_entries')
-          .select('*')
-          .order('sort_order', { ascending: true })
+        supabase.from('timeline_entries').select('*').order('sort_order', { ascending: true }),
+        supabase.from('suggestions').select('*').eq('is_public', true).order('is_featured', { ascending: false }).order('created_at', { ascending: true }).limit(50),
       ]);
-
-      setWaitlistCount(count ?? 0);
-      setQuestions((questionsRes.data ?? []) as Suggestion[]);
-      setRoadmap((roadmapRes.data ?? []) as TimelineEntry[]);
+      if (count != null) setWaitlistCount(count);
+      if (rRes.data) setRoadmap(rRes.data as TimelineEntry[]);
+      if (qRes.data) setQuestions(qRes.data as Suggestion[]);
     };
-
     load();
 
-    const roadmapSub = supabase
-      .channel('public-roadmap')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'timeline_entries' }, () => {
-        load();
-      })
+    const sub = supabase
+      .channel('public-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'timeline_entries' }, () => load())
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(roadmapSub);
-    };
+    return () => { supabase.removeChannel(sub); };
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setNavCompact(window.scrollY > 20);
-    onScroll();
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const nodes = Array.from(document.querySelectorAll<HTMLElement>('section[data-section]'));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection((entry.target as HTMLElement).dataset.section ?? 'problem');
-          }
-        });
-      },
-      { rootMargin: '-35% 0px -45% 0px', threshold: 0.18 },
-    );
-
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
+    if (qScrollRef.current) {
+      qScrollRef.current.scrollTo({ top: qScrollRef.current.scrollHeight, behavior: 'smooth' });
+    }
   }, [questions.length]);
 
-  const featuredQuestion = useMemo(
-    () => questions.find((item) => item.is_featured) ?? questions[0],
-    [questions],
-  );
+  useEffect(() => {
+    const nodes = document.querySelectorAll<HTMLElement>('.rv');
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      },
+      { threshold: 0.11 },
+    );
+    nodes.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  });
 
-  const handleJoin = async (event: React.FormEvent) => {
-    event.preventDefault();
+  useEffect(() => {
+    const sio = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActiveSection(e.target.id);
+        });
+      },
+      { rootMargin: '-35% 0px -45% 0px', threshold: 0.15 },
+    );
+    NAV_ITEMS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) sio.observe(el);
+    });
+    return () => sio.disconnect();
+  }, []);
+
+  const handleJoin = async () => {
+    const email = joinForm.email.trim().toLowerCase();
+    const name = joinForm.name.trim() || email.split('@')[0];
+    if (!email) return;
     setJoinState('loading');
+    setJoinError('');
 
-    const payload = {
-      name: joinForm.name.trim() || joinForm.email.split('@')[0],
-      email: joinForm.email.trim().toLowerCase(),
+    const { error } = await supabase.from('waitlist').insert({
+      name,
+      email,
       role: joinForm.role,
-      interest_level: 'high',
-    };
+    });
 
-    const { error } = await supabase.from('waitlist').insert(payload);
-
-    if (error) {
+    if (error && error.code !== '23505') {
       setJoinState('error');
+      setJoinError('Something went wrong. Try again.');
       return;
     }
 
+    const v = { name, email, role: joinForm.role };
+    writeVisitor(v);
+    setVisitor(v);
     setJoinState('success');
-    addToast("Welcome to the waitlist! We'll keep you updated.");
-    setWaitlistCount((current) => current + 1);
-    
-    const visitor = { name: payload.name, email: payload.email, role: payload.role };
-    writeVisitorCookie(visitor);
-    
-    // Delay setting registered visitor to allow 'animate-form-out' to play
-    setTimeout(() => {
-      setRegisteredVisitor(visitor);
-      setJoinForm({ name: '', email: '', role: 'student' });
-    }, 500);
+    addToast("You're on the list! We'll be in touch.");
+    setWaitlistCount((c) => c + 1);
   };
 
-  const handleQuestionSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!registeredVisitor) {
-      setQuestionState('error');
-      sectionScroll('waitlist');
-      return;
-    }
-
+  const handleQuestionSubmit = async () => {
+    if (!visitor) { goto('waitlist'); return; }
+    const content = questionForm.content.trim();
+    if (!content) return;
     setQuestionState('loading');
+    setQError('');
 
-    const derivedName = formatDisplayName(registeredVisitor.email, registeredVisitor.name);
-    const payload = {
-      author_name: derivedName,
-      author_email: registeredVisitor.email,
-      email: registeredVisitor.email.trim().toLowerCase(),
+    const { data, error } = await supabase.from('suggestions').insert({
+      name: visitor.name,
+      email: visitor.email.toLowerCase(),
       title: questionForm.title.trim() || null,
-      content: questionForm.content.trim(),
+      content,
       type: 'question',
       status: 'open',
-      author_avatar_url: '/assets/default-avatar.svg',
       is_public: true,
-    };
-
-    const { data, error } = await supabase.from('suggestions').insert(payload).select('*').single();
+    }).select('*').single();
 
     if (error || !data) {
       setQuestionState('error');
+      setQError('Failed to post. Try again.');
       return;
     }
 
     setQuestionState('success');
-    addToast("Your feedback has been posted successfully.");
-    setQuestions((current) => [...current, data as Suggestion]);
+    setQuestions((prev) => [...prev, data as Suggestion]);
     setQuestionForm({ title: '', content: '' });
-    
-    // Auto-hide success message after 5 seconds to allow more comments
-    setTimeout(() => {
-      if (questionState === 'success') setQuestionState('idle');
-    }, 5000);
+    addToast('Your question has been posted.');
+    setTimeout(() => setQuestionState('idle'), 4000);
   };
 
-  const handleNavClick = (id: string) => {
-    setActiveSection(id);
-    sectionScroll(id);
+  const statusCfg: Record<string, { spCls: string; label: string; cardCls: string; icon: string; iconColor: string; textColor: string; descColor: string; itemColor: string }> = {
+    past: { spCls: 'done', label: 'Completed', cardCls: 'done', icon: '✓', iconColor: '#4ade80', textColor: 'rgba(255,255,255,.85)', descColor: 'rgba(255,255,255,.38)', itemColor: 'rgba(255,255,255,.45)' },
+    present: { spCls: 'now', label: 'In Progress', cardCls: 'now', icon: '→', iconColor: 'var(--orange)', textColor: 'var(--orange)', descColor: 'rgba(255,255,255,.45)', itemColor: 'rgba(255,255,255,.55)' },
+    future: { spCls: 'next', label: 'Planned', cardCls: 'future', icon: '○', iconColor: 'rgba(255,255,255,.25)', textColor: 'rgba(255,255,255,.70)', descColor: 'rgba(255,255,255,.30)', itemColor: 'rgba(255,255,255,.30)' },
   };
 
   return (
-    <div className="page-shell" id="top">
-      <Navbar 
-        activeSection={activeSection} 
-        ctaLabel={PRODUCT_COPY.navCta} 
-        compact={navCompact} 
-        onNavClick={handleNavClick}
-      />
+    <>
+      <header className="nav-bar">
+        <nav className="nav-inner wrap">
+          <div className="nav-brand">
+            <div className="nav-logomark" aria-hidden="true">
+              <img src="/assets/logo-mark.jpg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} />
+            </div>
+            <span className="nav-wordmark">LifeOS</span>
+          </div>
+          <div className="nav-links">
+            {NAV_ITEMS.map((id) => (
+              <button key={id} className={`nl ${activeSection === id ? 'on' : ''}`} onClick={() => goto(id)}>
+                {id === 'problem' ? 'Problem' : id === 'what' ? 'What is it' : id === 'features' ? 'Features' : id === 'questions' ? 'Q&A' : 'Roadmap'}
+              </button>
+            ))}
+          </div>
+          <button className="nav-join" onClick={() => goto('waitlist')}>Join Waitlist</button>
+        </nav>
+      </header>
 
-      <div className="toast-stack">
-        {toasts.map(toast => (
-          <div key={toast.id} className="toast-item">
-            <CheckCircle2 size={18} className="toast-success-icon" />
-            <span>{toast.message}</span>
+      <div className="toasts" id="toasts">
+        {toasts.map((t) => (
+          <div key={t.id} className="toast">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <span>{t.message}</span>
           </div>
         ))}
       </div>
 
-      <main className="page-main">
-        <section className="hero-section">
-          <div className="hero-layout">
-            <div className="hero-copy">
-              <span className="eyebrow">
-                <Sparkles size={14} />
-                {PRODUCT_COPY.heroBadge}
-              </span>
-              <h1 className="hero-title">
-                LifeOS turns action into visible progress.
-              </h1>
-              <p className="hero-subtext">{PRODUCT_COPY.heroBody}</p>
-              <div className="hero-actions">
-                <button className="button button-primary" onClick={() => sectionScroll('waitlist')}>
-                  {PRODUCT_COPY.heroPrimary}
-                  <ChevronRight size={16} />
-                </button>
-                <button className="button button-secondary" onClick={() => sectionScroll('loop')}>
-                  {PRODUCT_COPY.heroSecondary}
-                </button>
-              </div>
-            </div>
+      <main className="page">
+        {/* ═══ HERO ═══ */}
+        <section className="hero" id="hero">
+          <div className="tx-dots" style={{ opacity: 0.45, WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 30% 50%,black,transparent)', maskImage: 'radial-gradient(ellipse 70% 60% at 30% 50%,black,transparent)' }} />
+          <div className="hero-bg-letter" aria-hidden="true">L</div>
+          <svg style={{ position: 'absolute', right: '4%', top: '12%', width: 260, height: 260, opacity: 0.05, pointerEvents: 'none' }} viewBox="0 0 260 260" fill="none" aria-hidden="true">
+            <circle cx="130" cy="130" r="120" stroke="#e8620a" strokeWidth="1" strokeDasharray="8 7" />
+            <circle cx="130" cy="130" r="80" stroke="#e8620a" strokeWidth="0.7" strokeDasharray="4 9" />
+            <circle cx="130" cy="10" r="6" fill="#e8620a" />
+            <circle cx="250" cy="130" r="4" fill="#c4510a" />
+          </svg>
 
-            <aside className="hero-system-card">
-              <div className="system-label">Core truth</div>
-              <h2>If one task gets completed and the user returns tomorrow, the system is working.</h2>
-              <div className="system-list">
-                <div className="system-row">
-                  <CheckCircle2 size={16} />
-                  <span>{waitlistCount.toLocaleString()} people waiting for launch access</span>
+          <div className="wrap">
+            <div className="hero-inner">
+              <div className="rv">
+                <h1 className="t-display" style={{ marginBottom: 22 }}>
+                  The operating system<br />for <em>your life.</em>
+                </h1>
+                <p className="t-body" style={{ maxWidth: 440, marginBottom: 36 }}>
+                  From scattered goals to consistent execution. LifeOS helps you act, prove your work, earn growth, and return stronger — every single day.
+                </p>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 44 }}>
+                  <button className="btn btn-fill" onClick={() => goto('waitlist')}>
+                    Get Early Access
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </button>
+                  <button className="btn btn-line" onClick={() => goto('what')}>See how it works</button>
                 </div>
-                <div className="system-row">
-                  <Flame size={16} />
-                  <span>Proof, streaks, and XP are tied to visible action</span>
-                </div>
-                <div className="system-row">
-                  <MessageSquareText size={16} />
-                  <span>Public feedback stays attached to the product story</span>
-                </div>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section id="why" data-section="why" className="page-section">
-          <div className="section-header">
-            <span className="section-label">Problem</span>
-            <h2>{PRODUCT_COPY.problemTitle}</h2>
-            <p>{PRODUCT_COPY.problemBody}</p>
-          </div>
-          <div className="card-grid card-grid-3">
-            {PROBLEM_CARDS.map(({ icon: Icon, label, title, body }) => (
-              <article className="product-card" key={title}>
-                <div className="card-topline">
-                  <div className="icon-chip"><Icon size={16} /></div>
-                  <span>{label}</span>
-                </div>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="loop" data-section="loop" className="page-section section-alt">
-          <div className="section-header">
-            <span className="section-label">System</span>
-            <h2>{PRODUCT_COPY.loopTitle}</h2>
-            <p>{PRODUCT_COPY.loopBody}</p>
-          </div>
-          <div className="card-grid card-grid-4 coreloop-grid">
-            {LOOP_CARDS.map((item) => (
-              <article className="product-card loop-card" key={item.step}>
-                <span className="step-number">{item.step}</span>
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="roadmap" data-section="roadmap" className="page-section">
-          <div className="section-header">
-            <span className="section-label">Roadmap</span>
-            <h2>{PRODUCT_COPY.roadmapTitle}</h2>
-            <p>{PRODUCT_COPY.roadmapBody}</p>
-          </div>
-          <div className="card-grid card-grid-2 roadmap-grid">
-            {roadmap.map((item, index) => (
-              <article className="product-card roadmap-card" key={item.id}>
-                <div className="roadmap-header">
-                  <span className="step-number">STEP 0{index + 1}</span>
-                  <span className={`status-badge status-${item.status}`}>
-                    {item.status === 'present' && <span className="pulse-dot" />}
-                    {item.status === 'past' && <CheckCircle2 size={12} className="badge-check-icon" style={{ marginRight: '4px' }} />}
-                    {item.status === 'past' ? 'Completed' : item.status === 'present' ? 'In Progress' : 'Upcoming'}
-                  </span>
-                </div>
-                <h3 className="roadmap-title">{item.title}</h3>
-                <p className="roadmap-desc">{item.description}</p>
-                <div className="point-list roadmap-tags">
-                  {item.items?.map((point: string) => (
-                    <span key={point}>{point}</span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="questions" data-section="questions" className="page-section section-alt questions-section">
-          <div className="section-header">
-            <span className="section-label">Feedback</span>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2>{PRODUCT_COPY.questionsTitle}</h2>
-              <div className="live-pill">
-                <span className="live-dot" />
-                Live
-              </div>
-            </div>
-            <p>{PRODUCT_COPY.questionsBody}</p>
-          </div>
-
-          <div className="questions-container-unified">
-            <div className="questions-dual-pane questions-layout">
-              <div className="comment-window" ref={feedRef}>
-                {questions.length === 0 ? (
-                  <div className="feed-empty-state">
-                    <MessageSquareText size={48} strokeWidth={1} />
-                    <p>No questions yet. Be the first to start the conversation.</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex' }}>
+                    {['A', 'P', 'K', 'S'].map((letter, i) => (
+                      <span key={letter} style={{
+                        width: 29, height: 29, borderRadius: '50%',
+                        background: ['#e8620a', '#166534', '#6d28d9', '#0369a1'][i],
+                        border: '2px solid var(--paper)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, fontWeight: 600, color: '#fff',
+                        marginRight: i < 3 ? -9 : 0, flexShrink: 0,
+                        fontFamily: 'var(--sans)',
+                      }}>{letter}</span>
+                    ))}
                   </div>
-                ) : (
-                  <div className="feed-list">
-                    {questions.map((q) => {
-                      const name = formatDisplayName(q.email, q.author_name || q.name || undefined);
-                      return (
-                          <div 
-                            key={q.id} 
-                            className={`comment-card ${q.is_featured ? 'featured-item' : ''} ${expandedMessages[q.id] ? 'expanded' : ''} animate-message-in`}
-                            onClick={() => setExpandedMessages(prev => ({ ...prev, [q.id]: !prev[q.id] }))}
-                          >
-                            <div className="feed-user-meta">
-                              <div className="avatar" style={{ backgroundColor: getAvatarColor(name) }}>
-                                {getInitials(name)}
-                              </div>
-                              <div className="feed-user-details">
-                                <div className="feed-header-line">
-                                  <span className="feed-author">{name}</span>
-                                  {q.is_featured && <span className="feed-badge-featured">Featured</span>}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="feed-bubble">
-                              {q.title && <h3 className="feed-bubble-title">{q.title}</h3>}
-                              <p className="feed-bubble-content">{q.content}</p>
-                            </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }} id="hero-count">
+                      {waitlistCount.toLocaleString()} people waiting
+                    </div>
+                    <div className="mono" style={{ color: 'var(--faint)' }}>Early access · Limited spots</div>
+                  </div>
+                </div>
+              </div>
 
+              <div className="hero-stat-block rv d2">
+                <div className="stat-card">
+                  <div className="stat-card-header">
+                    <span className="stat-card-title">Your daily execution board</span>
+                    <span className="stat-live"><span className="stat-live-dot" />Live</span>
+                  </div>
+                  <div className="stat-nums">
+                    <div className="stat-num-cell">
+                      <div className="stat-big accent">14</div>
+                      <div className="stat-key">Day streak 🔥</div>
+                    </div>
+                    <div className="stat-num-cell">
+                      <div className="stat-big">2,840</div>
+                      <div className="stat-key">Growth Points</div>
+                    </div>
+                    <div className="stat-num-cell">
+                      <div className="stat-big">94%</div>
+                      <div className="stat-key">Consistency</div>
+                    </div>
+                  </div>
+                  <div className="stat-progress">
+                    <div className="stat-progress-label">
+                      <span className="mono" style={{ color: 'var(--muted)' }}>Daily XP</span>
+                      <span className="mono" style={{ color: 'var(--ink)' }}>620 / 1000</span>
+                    </div>
+                    <div className="stat-progress-track">
+                      <div className="stat-progress-fill" />
+                    </div>
+                  </div>
+                  <div className="stat-tasks">
+                    {[
+                      { label: 'Morning workout — 45 min', done: true, tag: 'verified', green: true },
+                      { label: 'Read 30 pages', done: true, tag: 'verified', green: true },
+                      { label: 'Deep work session — 2h', done: false, tag: 'due today', green: false },
+                    ].map((task) => (
+                      <div key={task.label} className="stat-task-row">
+                        <div className={`task-check ${task.done ? 'done' : 'open'}`}>
+                          {task.done && (
+                            <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" strokeWidth="2"><path d="M1.5 5l2.5 2.5L8.5 2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                          )}
+                        </div>
+                        <span className={`task-label ${task.done ? 'done-txt' : ''}`}>{task.label}</span>
+                        <span className={`task-tag ${task.green ? 'green' : ''}`}>{task.tag}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="stat-proof-banner">
+                    <div className="stat-proof-icon">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </div>
+                    <div>
+                      <div className="stat-proof-text">Proof validated by AI</div>
+                      <div className="stat-proof-sub">Morning workout · +150 GP awarded</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ TRUST MARQUEE ═══ */}
+        <div className="trust-strip">
+          <div className="trust-track">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="trust-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {['AI-validated proof', 'Real streak accountability', 'Growth Points system', 'Social proof feed', 'EXIF anti-cheat validation', 'Permanent execution record'][i % 6]}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ═══ PROBLEM ═══ */}
+        <section className="section" id="problem">
+          <div className="tx-cross" style={{ opacity: 0.6, WebkitMaskImage: 'radial-gradient(ellipse 85% 70% at 25% 50%,black,transparent)', maskImage: 'radial-gradient(ellipse 85% 70% at 25% 50%,black,transparent)' }} />
+          <svg style={{ position: 'absolute', right: -50, top: '50%', transform: 'translateY(-50%)', width: 380, height: 380, opacity: 0.04, pointerEvents: 'none', animation: 'spin-slow 90s linear infinite' }} viewBox="0 0 380 380" fill="none" aria-hidden="true">
+            <circle cx="190" cy="190" r="180" stroke="#1c1410" strokeWidth="1" />
+            <circle cx="190" cy="190" r="130" stroke="#1c1410" strokeWidth="1" strokeDasharray="7 6" />
+            <circle cx="190" cy="190" r="88" stroke="#e8620a" strokeWidth="1.4" />
+            <circle cx="190" cy="190" r="44" stroke="#1c1410" strokeWidth="1" />
+            <circle cx="190" cy="190" r="10" fill="#e8620a" />
+            <line x1="190" y1="10" x2="190" y2="370" stroke="#1c1410" strokeWidth="0.5" strokeDasharray="5 6" />
+            <line x1="10" y1="190" x2="370" y2="190" stroke="#1c1410" strokeWidth="0.5" strokeDasharray="5 6" />
+          </svg>
+
+          <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="rv" style={{ marginBottom: 52 }}>
+              <span className="t-label">The Problem</span>
+              <h2 className="t-h2">You don't need another app.<br /><em>You need a system.</em></h2>
+            </div>
+            <div className="pain-grid">
+              {[
+                { num: '01', title: '12 apps. Zero clarity.', body: 'Notes in one place, tasks in another, goals in a journal you haven\'t opened in months. Everything is somewhere. Nothing is actionable.' },
+                { num: '02', title: 'Planning feels productive. It isn\'t.', body: 'You spend Sunday color-coding categories. Monday arrives. The gap between plan and reality is exactly the same as it was.' },
+                { num: '03', title: 'No proof you\'re growing.', body: 'Motivation fades because you can\'t see progress. Without a system that tracks reality — not intention — every goal quietly dies.' },
+              ].map((card, i) => (
+                <article key={card.num} className={`pain-card rv d${i + 1}`}>
+                  <div className="pain-num">{card.num}</div>
+                  <div className="pain-icon">
+                    <svg width="21" height="21" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      {i === 0 ? (
+                        <>
+                          <rect x="2" y="2" width="8" height="8" rx="2" /><rect x="12" y="2" width="8" height="8" rx="2" /><rect x="2" y="12" width="8" height="8" rx="2" /><rect x="12" y="12" width="8" height="8" rx="2" />
+                        </>
+                      ) : i === 1 ? (
+                        <>
+                          <circle cx="11" cy="11" r="8.5" /><path d="M11 7v4l3 3" strokeLinecap="round" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M4 17l4-5 3 3 4-6 4 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 20h14" strokeLinecap="round" />
+                        </>
+                      )}
+                    </svg>
+                  </div>
+                  <h3 className="t-h3" style={{ marginBottom: 10 }}>{card.title}</h3>
+                  <p className="t-sm">{card.body}</p>
+                  <div className="pain-rule" />
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ QUOTE BREAK ═══ */}
+        <div className="quote-break">
+          <div className="quote-mark-bg" aria-hidden="true">"</div>
+          <div className="wrap rv">
+            <blockquote>If one task gets completed and the user returns tomorrow, <em>the system is working.</em></blockquote>
+            <p className="quote-attr">— LifeOS core principle</p>
+          </div>
+        </div>
+
+        {/* ═══ WHAT ═══ */}
+        <section className="section section-alt" id="what">
+          <div className="tx-rules" style={{ opacity: 0.75, WebkitMaskImage: 'radial-gradient(ellipse 100% 80% at 50% 50%,black,transparent)', maskImage: 'radial-gradient(ellipse 100% 80% at 50% 50%,black,transparent)' }} />
+          <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="what-grid">
+              <div className="rv">
+                <span className="t-label">What is LifeOS</span>
+                <h2 className="t-h2" style={{ marginBottom: 0 }}>Not another productivity tool.<br /><em>A system for your life.</em></h2>
+                <div className="what-pull">
+                  <p>LifeOS is a single place to set goals, execute tasks, submit proof of completion, earn recognition for your discipline, and watch your consistency compound into a permanent record of who you're becoming.</p>
+                </div>
+                <button className="btn btn-fill" onClick={() => goto('waitlist')}>Join the waitlist</button>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <div className="what-side-letter" aria-hidden="true">S</div>
+                {[
+                  { n: '01', title: 'One system, not twelve apps', body: 'Tasks, habits, goals, proof, community — all in one coherent place that works together.' },
+                  { n: '02', title: 'Proof over intention', body: 'AI validates every completion. Your growth is visible, real, and fraud-resistant. No self-deception allowed.' },
+                  { n: '03', title: 'Accountability built in', body: 'Streak, Growth Points, and consistency score compound automatically. You become accountable to data, not willpower.' },
+                ].map((p, i) => (
+                  <div key={p.n} className={`pillar rv d${i + 1}`}>
+                    <div className="pillar-n">{p.n}</div>
+                    <div>
+                      <div className="pillar-title">{p.title}</div>
+                      <p className="t-sm">{p.body}</p>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ borderTop: '1px solid var(--rule)' }} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ FEATURES ═══ */}
+        <section className="section" id="features">
+          <div className="tx-dots" style={{ opacity: 0.35, WebkitMaskImage: 'radial-gradient(ellipse 90% 80% at 80% 50%,black,transparent)', maskImage: 'radial-gradient(ellipse 90% 80% at 80% 50%,black,transparent)' }} />
+          <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="rv" style={{ textAlign: 'center', maxWidth: 520, margin: '0 auto 52px' }}>
+              <span className="t-label">Features</span>
+              <h2 className="t-h2">Built for <em>real growth.</em></h2>
+              <p className="t-body" style={{ marginTop: 14 }}>Every feature closes the gap between who you are and who you're trying to become.</p>
+            </div>
+            <div className="feat-grid">
+              {[
+                { hi: true, title: 'Everything in one view.', body: 'Streak, Growth Points, consistency score, active tasks — unified in a dashboard that loads in under a second.', stat: '1 screen · to see it all', label: 'Life Dashboard' },
+                { hi: false, title: 'Goals become tasks become proof.', body: 'Set a goal. LifeOS breaks it into executable tasks. Complete them. Submit proof. AI validates. Points awarded.', stat: 'AI-validated · every completion', label: 'Goals Engine' },
+                { hi: false, title: 'Your permanent record of discipline.', body: 'Every completed task, streak hit, and milestone is logged forever. The most honest portfolio you\'ve ever built.', stat: '∞ · history preserved', label: 'Timeline System' },
+                { hi: false, title: 'Growth is more powerful witnessed.', body: 'Follow real people making real progress. Share proof posts. Join communities built around specific goals — not noise.', stat: 'Public proof · not just claims', label: 'Social Layer' },
+                { hi: false, title: 'The most honest productivity app.', body: 'EXIF validation, duplicate detection, behavioral pattern analysis. You cannot fake your way to Growth Points.', stat: '0 fakes · allowed through', label: 'Anti-Cheat System' },
+                { hi: false, title: 'Consistency that compounds.', body: '1 task minimum per day. 1 grace skip per 7 days. Miss it and the streak resets. Simple rules, real consequences.', stat: 'Daily · accountability', label: 'Streak Engine' },
+              ].map((f, i) => (
+                <article key={f.label} className={`feat-card ${f.hi ? 'hi' : ''} rv d${(i % 3) + 1}`}>
+                  <div className="feat-icon" style={{
+                    background: f.hi ? 'rgba(232,98,10,0.10)' : i === 1 ? 'var(--og-tint)' : i === 2 ? 'rgba(22,101,52,0.08)' : i === 3 ? 'rgba(109,40,217,0.08)' : i === 4 ? 'rgba(185,28,28,0.07)' : 'var(--og-tint)',
+                    border: f.hi ? '1px solid rgba(232,98,10,0.18)' : '1px solid var(--og-rule)',
+                  }}>
+                    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={f.hi ? '#e8620a' : i === 2 ? '#166534' : i === 3 ? '#6d28d9' : i === 4 ? '#b91c1c' : '#e8620a'} strokeWidth="1.8">
+                      {i === 0 ? <><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M3 9h18M9 21V9" strokeLinecap="round" /></>
+                      : i === 1 ? <><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 3" strokeLinecap="round" /></>
+                      : i === 2 ? <><path d="M4 17l4-5 3 3 4-6 4 4" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 20h16" strokeLinecap="round" /></>
+                      : i === 3 ? <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" /></>
+                      : i === 4 ? <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" /></>
+                      : <><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round" /></>}
+                    </svg>
+                  </div>
+                  <span className="t-label" style={f.hi ? { color: 'var(--orange-2)' } : {}}>{f.label}</span>
+                  <h3 className="t-h3" style={{ marginBottom: 9 }}>{f.title}</h3>
+                  <p className="t-sm">{f.body}</p>
+                  <div className="feat-stat">
+                    <span className="feat-stat-val">{f.stat.split('·')[0].trim()}</span>
+                    <span className="feat-stat-lab">· {f.stat.split('·')[1]?.trim()}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ QUESTIONS ═══ */}
+        <section className="section section-alt" id="questions">
+          <div className="tx-rules" style={{ opacity: 0.6, WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 40%,black,transparent)', maskImage: 'radial-gradient(ellipse 80% 70% at 50% 40%,black,transparent)' }} />
+          <svg className="q-illus" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+            <circle cx="100" cy="100" r="85" strokeWidth="0.8" strokeDasharray="6 7" />
+            <circle cx="100" cy="100" r="55" strokeWidth="0.6" strokeDasharray="4 6" />
+            <path d="M60 130c0-12 8-22 18-22h44c10 0 18 10 18 22v14c0 12-8 22-18 22H78c-10 0-18-10-18-22v-14z" strokeWidth="1.2" />
+            <path d="M78 110c0-6 5-11 11-11h22c6 0 11 5 11 11" strokeWidth="1" />
+            <circle cx="100" cy="80" r="4" fill="var(--orange)" opacity="0.3" />
+            <circle cx="124" cy="86" r="2.5" fill="var(--orange)" opacity="0.2" />
+            <circle cx="80" cy="120" r="2" fill="var(--orange)" opacity="0.15" />
+            <path d="M52 52l12-4M148 52l12 4" strokeWidth="0.8" strokeDasharray="3 3" />
+            <path d="M30 160l30 8M170 160l-30 8" strokeWidth="0.6" strokeDasharray="3 4" opacity="0.5" />
+          </svg>
+          <div className="wrap" style={{ position: 'relative', zIndex: 1 }}>
+            <div className="rv" style={{ marginBottom: 48 }}>
+              <span className="t-label">
+                <span className="q-live-dot" />
+                Questions & Feedback
+              </span>
+              <h2 className="t-h2">Ask <em>anything.</em></h2>
+              <p className="t-body" style={{ marginTop: 10, maxWidth: 480 }}>Curious about a feature? Have a suggestion? Questions from the community get answered by the team — publicly.</p>
+            </div>
+
+            <div className="q-layout rv d2">
+              <div className="q-box">
+                <div className="q-box-scroll" ref={qScrollRef}>
+                  {questions.length === 0 ? (
+                    <div className="q-empty">
+                      <div className="q-empty-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" strokeLinecap="round" /></svg>
+                      </div>
+                      <p className="q-empty-text">No questions yet. Be the first to ask.</p>
+                    </div>
+                  ) : (
+                    questions.map((q) => {
+                      const initials = getInitials(q.author_name || q.name || q.email);
+                      const color = getAvatarColor(q.author_name || q.name || q.email);
+                      return (
+                        <div key={q.id} className={`q-card${q.is_featured ? ' feat' : ''}`}>
+                          <div className="q-card-meta">
+                            <div className="q-av" style={{ background: color }}>{initials}</div>
+                            <div>
+                              <div className="q-auth">{q.author_name || q.name || 'User'}</div>
+                              <div className="q-time">{formatRelativeDate(q.created_at)}</div>
+                            </div>
+                            {q.is_featured && <span className="q-badge">Featured</span>}
+                          </div>
+                          {q.title && <div className="q-card-title">{q.title}</div>}
+                          <p className="q-card-body">{q.content}</p>
                           {q.admin_response && (
-                            <div className="feed-admin-reply">
-                              <div className="feed-user-meta min">
-                                <img 
-                                  src="/favicon.svg" 
-                                  alt="official avatar" 
-                                  className="avatar-logo" 
-                                />
-                                <div className="feed-user-details">
-                                  <div className="feed-header-line">
-                                    <span className="feed-author">LifeOS Team</span>
-                                    <span className="official-label">· Official</span>
-                                  </div>
-                                </div>
+                            <div className="q-reply">
+                              <div className="q-reply-hd">
+                                <span className="q-reply-badge">Official</span>
+                                <span className="q-reply-name">{q.admin_name || 'LifeOS Team'}</span>
                               </div>
-                              <p className="feed-reply-content">{q.admin_response}</p>
+                              <p className="q-reply-text">{q.admin_response}</p>
                             </div>
                           )}
                         </div>
                       );
-                    })}
+                    })
+                  )}
+                </div>
+                {questions.length > 3 && <div className="q-box-footer" />}
+              </div>
+
+              <div className="q-panel">
+                {questionState === 'success' ? (
+                  <div className="q-success">
+                    <div className="q-succ-ring">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </div>
+                    <div className="q-succ-title">Posted!</div>
+                    <p className="q-succ-text">Your question is now on the wall. The team will respond publicly.</p>
+                    <button className="btn btn-line" onClick={() => setQuestionState('idle')}>Ask another</button>
+                  </div>
+                ) : visitor ? (
+                  <>
+                    <div className="q-panel-title">Ask a question</div>
+                    <div className="q-panel-sub">Clear questions get better answers from the team.</div>
+                    <div className="q-field">
+                      <label className="q-lbl">Your question</label>
+                      <textarea className="q-ta" placeholder="e.g. When will the beta open? How does AI validation work?" rows={4} value={questionForm.content} onChange={(e) => setQuestionForm((p) => ({ ...p, content: e.target.value.substring(0, 300) }))} />
+                      <div className="q-count">{questionForm.content.length}/300</div>
+                    </div>
+                    {questionState === 'error' && <p className="q-err">{qError}</p>}
+                    <button className={`q-submit${questionState === 'loading' ? ' is-loading' : ''}`} disabled={questionState === 'loading' || !questionForm.content.trim()} onClick={handleQuestionSubmit}>
+                      {questionState === 'loading' ? 'Posting…' : 'Post question'}
+                    </button>
+                  </>
+                ) : (
+                  <div className="q-locked">
+                    <div className="q-locked-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round" /><path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" /></svg>
+                    </div>
+                    <div className="q-locked-title">Join the conversation</div>
+                    <p className="q-locked-text">Sign up for early access to ask questions, share feedback, and follow the product journey.</p>
+                    <button className="q-locked-btn" onClick={() => goto('waitlist')}>Get early access</button>
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="input-panel">
-                <div className="pane-inner">
-                  {questionState === 'success' ? (
-                    <div className="feed-post-confirmation">
-                      <div className="conf-icon">✓</div>
-                      <span>Posted to the wall</span>
-                      <button className="text-btn" onClick={() => setQuestionState('idle')}>Ask another</button>
+        {/* ═══ ROADMAP ═══ */}
+        <section className="section section-dark" id="roadmap" style={{ paddingBottom: 80 }}>
+          <svg className="tx-dark" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} aria-hidden="true">
+            <defs><pattern id="dg" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0v48" fill="none" stroke="white" strokeWidth="0.4" /></pattern></defs>
+            <rect width="100%" height="100%" fill="url(#dg)" />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 75% 85% at 50% 50%,transparent 25%,var(--dark) 100%)', pointerEvents: 'none' }} />
+
+          <div className="wrap" style={{ position: 'relative', zIndex: 2 }}>
+            <div className="rv" style={{ textAlign: 'center', marginBottom: 52 }}>
+              <span className="t-label" style={{ color: 'rgba(232,98,10,.70)' }}>Roadmap</span>
+              <h2 className="t-h2" style={{ color: 'var(--white)' }}>Built <em style={{ color: 'rgba(232,98,10,.82)' }}>in the open.</em></h2>
+              <p className="t-body" style={{ color: 'rgba(255,255,255,.42)', marginTop: 12, maxWidth: 480, marginLeft: 'auto', marginRight: 'auto' }}>Four phases, each one shipping real features. Watch it progress.</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, marginTop: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80' }} /><span className="mono" style={{ color: 'rgba(255,255,255,.38)' }}>Completed</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--orange)' }} className="blink-dot" /><span className="mono" style={{ color: 'rgba(255,255,255,.38)' }}>In Progress</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: 'rgba(255,255,255,.22)' }} /><span className="mono" style={{ color: 'rgba(255,255,255,.38)' }}>Planned</span></div>
+              </div>
+            </div>
+
+            <div className="roadmap-grid rv" id="roadmap-grid">
+              {roadmap.length === 0
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="rm-card future">
+                      <div className="sp next"><span className="sp-d" />Loading...</div>
+                      <div className="rm-title" style={{ color: 'rgba(255,255,255,.70)' }}>—</div>
                     </div>
-                  ) : (
-                    <div className="feed-input-flex">
-                      {!registeredVisitor ? (
-                        <div className="feed-input-locked" onClick={() => sectionScroll('waitlist')}>
-                          <h4 className="pane-status-title">Members only</h4>
-                          <p className="pane-helper-text">Register to start asking questions and join the conversation.</p>
-                          <div className="lock-btn-full">Register to post</div>
+                  ))
+                : roadmap.map((e) => {
+                    const c = statusCfg[e.status] || statusCfg.future;
+                    return (
+                      <div key={e.id} className={`rm-card ${c.cardCls}`}>
+                        <div className={`sp ${c.spCls}`}>
+                          <span className={`sp-d${e.status === 'present' ? ' pulse' : ''}`} />
+                          {c.label}
                         </div>
-                      ) : (
-                        <div className="feed-input-composer question-box">
-                          <div className="feed-user-identity desktop-only">
-                            <span className="identity-label">Posting as</span>
-                            <div className="identity-card">
-                              <div className="avatar" style={{ backgroundColor: getAvatarColor(registeredVisitor.name) }}>
-                                {getInitials(registeredVisitor.name)}
-                              </div>
-                              <span className="identity-name">{registeredVisitor.name}</span>
-                            </div>
+                        <div className="rm-title" style={{ color: c.textColor }}>{e.title}</div>
+                        {e.description && <div className="rm-desc" style={{ color: c.descColor }}>{e.description}</div>}
+                        {(e.items || []).map((it: string) => (
+                          <div key={it} className="rm-item">
+                            <span className="rm-item-icon" style={{ color: c.iconColor }}>{c.icon}</span>
+                            <span className="rm-item-text" style={{ color: c.itemColor }}>{it}</span>
                           </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+            </div>
+          </div>
+        </section>
 
-                          <form className="feed-form-full" onSubmit={handleQuestionSubmit}>
-                            <div className="input-header desktop-only">
-                              <h3>Ask a question or share feedback</h3>
-                              <p>Be specific. Clear questions get better answers.</p>
-                            </div>
-                            <div className="feed-inputs-main">
-                              <input
-                                className="feed-field-minimal"
-                                value={questionForm.title}
-                                onChange={(e) => setQuestionForm(prev => ({ ...prev, title: e.target.value.substring(0, 50) }))}
-                                placeholder="Topic (optional)"
-                                autoComplete="off"
-                              />
-                              <div className="feed-input-row">
-                                <div className="textarea-wrapper">
-                                  <textarea
-                                    className="feed-textarea-minimal"
-                                    value={questionForm.content}
-                                    onChange={(e) => setQuestionForm(prev => ({ ...prev, content: e.target.value.substring(0, 280) }))}
-                                    placeholder="Your question or feedback..."
-                                    required
-                                    rows={2}
-                                  />
-                                </div>
-                                <div className="feed-form-actions">
-                                  <button 
-                                    type="submit" 
-                                    className="button button-primary" 
-                                    disabled={questionState === 'loading' || !questionForm.content.trim()}
-                                  >
-                                    {questionState === 'loading' ? (
-                                      <div className="spinner-mini" />
-                                    ) : (
-                                      <>
-                                        <span className="desktop-only">Post feedback</span>
-                                        <Send size={18} />
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </form>
-                        </div>
+        {/* ═══ WAITLIST ═══ */}
+        <section className="section section-dark" id="waitlist" style={{ padding: '96px 0' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 55% 70% at 15% 55%,rgba(232,98,10,.09),transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 40% 50% at 85% 30%,rgba(232,98,10,.05),transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', right: -20, bottom: -50, fontFamily: 'var(--serif)', fontSize: 360, fontWeight: 700, color: 'rgba(255,255,255,.018)', lineHeight: 1, pointerEvents: 'none', userSelect: 'none' }} aria-hidden="true">W</div>
+
+          <div className="wrap" style={{ position: 'relative', zIndex: 2 }}>
+            <div className="wl-wrap">
+              <div className="rv">
+                <span className="t-label" style={{ color: 'rgba(232,98,10,.70)' }}>Waitlist · Limited access</span>
+                <h2 className="wl-title" id="wl-title">
+                  {visitor ? <>You're <em>on the list.</em></> : <>Join before the<br /><em>public launch.</em></>}
+                </h2>
+                <p className="wl-body">
+                  {visitor
+                    ? "Your spot in the LifeOS ecosystem is reserved. We'll reach out with early access when it's ready."
+                    : 'Early users help shape the execution system, the proof loop, and the social layer before LifeOS opens publicly. You\'ll get founding member status.'}
+                </p>
+                <p className="wl-note">No spam. Only product updates.</p>
+                <div className="wl-perks">
+                  <div className="wl-perk">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    Founding member status + legacy XP bonus
+                  </div>
+                  <div className="wl-perk">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    Direct access to the team for feedback
+                  </div>
+                  <div className="wl-perk">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    Priority invite when access opens
+                  </div>
+                </div>
+              </div>
+              <div className="rv d2">
+                <div className="wl-card" id="wl-form-wrap">
+                  {visitor ? (
+                    <>
+                      <div className="succ-ring">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6ee7b7" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      </div>
+                      <div className="succ-title">Welcome aboard</div>
+                      <p className="succ-body">We'll reach out to <strong style={{ color: '#fff' }}>{visitor.email}</strong> with early access when it's ready.</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                        <div className="succ-line"><div className="succ-dot" /><span>You're on the early access list</span></div>
+                        <div className="succ-line"><div className="succ-dot" /><span>Founding member status reserved</span></div>
+                        <div className="succ-line"><div className="succ-dot" /><span>Priority invite when access opens</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="wl-card-title">Reserve your spot</div>
+                      <div className="wl-card-sub">Join builders who want results, not reminders.</div>
+                      <div className="wf">
+                        <label className="wl">Name</label>
+                        <input
+                          className="wi"
+                          placeholder="Your name"
+                          autoComplete="name"
+                          value={joinForm.name}
+                          onChange={(e) => setJoinForm((p) => ({ ...p, name: e.target.value }))}
+                        />
+                      </div>
+                      <div className="wf">
+                        <label className="wl">Email</label>
+                        <input
+                          type="email"
+                          className="wi"
+                          placeholder="you@example.com"
+                          autoComplete="email"
+                          required
+                          value={joinForm.email}
+                          onChange={(e) => setJoinForm((p) => ({ ...p, email: e.target.value }))}
+                        />
+                      </div>
+
+                      <button
+                        className="wl-submit"
+                        id="wl-btn"
+                        disabled={joinState === 'loading'}
+                        onClick={handleJoin}
+                      >
+                        {joinState === 'loading' ? 'Joining…' : 'Join the Waitlist'}
+                      </button>
+                      {joinState === 'error' && (
+                        <p className="wl-err" style={{ display: 'block' }}>{joinError || 'Something went wrong. Try again.'}</p>
                       )}
-                    </div>
+                      <p className="mono" style={{ color: 'rgba(255,255,255,.20)', textAlign: 'center', marginTop: 12 }}>No spam · Unsubscribe anytime</p>
+                    </>
                   )}
                 </div>
               </div>
@@ -791,162 +745,36 @@ function App() {
           </div>
         </section>
 
-        <section id="waitlist" className="page-section waitlist-section">
-          <div className="waitlist-layout">
-            <div className="waitlist-content">
-              <span className="section-label">Waitlist</span>
-              <h2 className="waitlist-title">
-                {registeredVisitor ? "You're on the list" : PRODUCT_COPY.ctaTitle}
-              </h2>
-              <p className="waitlist-desc">
-                {registeredVisitor 
-                  ? "Your spot in the LifeOS ecosystem is reserved." 
-                  : PRODUCT_COPY.ctaBody
-                }
-              </p>
-              {registeredVisitor && (
-                <p className="waitlist-subtext desktop-only">
-                  Start building your proof system early.<br/>
-                  LifeOS rewards execution — not intentions.
-                </p>
-              )}
-              {!registeredVisitor && <p className="waitlist-note">{PRODUCT_COPY.ctaTrust}</p>}
+        {/* ═══ FOOTER ═══ */}
+        <footer className="footer">
+          <div className="wrap footer-inner">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="nav-logomark">
+                  <img src="/assets/logo-mark.jpg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} />
+                </div>
+                <span className="footer-name">LifeOS</span>
+              </div>
+              <p className="footer-desc">Built for people who take action, prove progress, and return stronger.</p>
             </div>
-
-            <div className="waitlist-form-container">
-              {registeredVisitor ? (
-                <div className="registration-reward-block animate-reward-in">
-                  <div className="reward-icon-shell">
-                    <CheckCircle2 size={32} className="reward-icon" />
-                    <Sparkles size={16} className="reward-sparkle" />
-                  </div>
-                  
-                  <div className="reward-content">
-                    <h3 className="reward-title">Welcome aboard 🔥</h3>
-                    <p className="reward-main-msg">
-                      We’ll send you an email shortly to complete your registration and unlock access.
-                    </p>
-                    
-                    <div className="reward-supporting-lines">
-                      <div className="reward-line">
-                        <div className="reward-dot" />
-                        <span>You’re now on the early access list.</span>
-                      </div>
-                      <div className="reward-line">
-                        <div className="reward-dot" />
-                        <span>We’ll notify you as soon as your access is ready.</span>
-                      </div>
-                      <div className="reward-line">
-                        <div className="reward-dot" />
-                        <span>No spam. Only important updates.</span>
-                      </div>
-                      <div className="reward-line">
-                        <div className="reward-dot" />
-                        <span>Get ready to experience LifeOS before everyone else.</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className={`waitlist-form ${joinState === 'success' ? 'animate-form-out' : ''}`}>
-                  <form className="form-container" onSubmit={handleJoin}>
-                    <label className="field">
-                      <span>Name</span>
-                      <input
-                        value={joinForm.name}
-                        onChange={(event) => setJoinForm((current) => ({ ...current, name: event.target.value }))}
-                        placeholder="Your name"
-                        required
-                      />
-                    </label>
-                    <label className="field">
-                      <span>Email</span>
-                      <input
-                        type="email"
-                        value={joinForm.email}
-                        onChange={(event) => setJoinForm((current) => ({ ...current, email: event.target.value }))}
-                        placeholder="you@example.com"
-                        required
-                      />
-                    </label>
-                    <div className="field custom-select">
-                      <span>Role</span>
-                      <div className="custom-select-wrapper">
-                        <button
-                          type="button"
-                          className={`custom-select-trigger ${isRoleOpen ? 'open' : ''}`}
-                          onClick={() => setIsRoleOpen((prev) => !prev)}
-                        >
-                          <span className="selected-value">
-                            {ROLES.find(r => r.value === joinForm.role)?.label || 'Select your role'}
-                          </span>
-                          <ChevronDown size={16} className="trigger-arrow" />
-                        </button>
-
-                        <div className={`custom-select-dropdown ${isRoleOpen ? 'show' : ''}`}>
-                          {ROLES.map((role) => (
-                            <button
-                              key={role.value}
-                              type="button"
-                              className={`dropdown-option ${joinForm.role === role.value ? 'selected' : ''}`}
-                              onClick={() => {
-                                setJoinForm(prev => ({ ...prev, role: role.value }));
-                                setIsRoleOpen(false);
-                              }}
-                            >
-                              {role.label}
-                            </button>
-                          ))}
-                        </div>
-                        <div 
-                          className={`custom-select-overlay ${isRoleOpen ? 'show' : ''}`} 
-                          onClick={() => setIsRoleOpen(false)} 
-                        />
-                      </div>
-                    </div>
-                    <button className="button button-primary button-full" type="submit" disabled={joinState === 'loading'}>
-                      {joinState === 'loading' ? 'Joining...' : PRODUCT_COPY.navCta}
-                    </button>
-                    {joinState === 'error' && <p className="feedback error">That signup failed. If you already joined, try another email.</p>}
-                  </form>
-                </div>
-              )}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+              <div className="footer-icons">
+                <a href="https://instagram.com/lifeossocial" target="_blank" rel="noreferrer" className="fi" title="Instagram" aria-label="Instagram">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
+                </a>
+                <a href="https://www.facebook.com/share/18KES85u5V/" target="_blank" rel="noreferrer" className="fi" title="Facebook" aria-label="Facebook">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
+                </a>
+                <a href="mailto:lifeossocial01@gmail.com" className="fi" title="Email" aria-label="Email us">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                </a>
+              </div>
+              <div className="mono" style={{ color: 'var(--faint)' }}>lifeossocial01@gmail.com</div>
             </div>
           </div>
-        </section>
+        </footer>
       </main>
-
-      <footer className="footer">
-        <div className="footer-left">
-          <div className="footer-brand">
-            <img src="/assets/logo-mark.jpg" alt="LifeOS" className="footer-logo" />
-            <img src="/assets/logo-wordmark.svg" alt="LifeOS" className="footer-wordmark-svg" />
-          </div>
-        </div>
-
-        <div className="footer-right">
-          <p className="footer-desc">
-            {PRODUCT_COPY.footer}
-          </p>
-
-          <div className="footer-icons">
-            <a href="https://instagram.com/lifeossocial" target="_blank" rel="noreferrer" title="Instagram">
-              <Instagram size={20} />
-            </a>
-            <a href="https://www.facebook.com/share/18KES85u5V/" target="_blank" rel="noreferrer" title="Facebook">
-              <Facebook size={20} />
-            </a>
-            <a href="mailto:lifeossocial01@gmail.com" title="Email">
-              <Mail size={20} />
-            </a>
-          </div>
-
-          <div className="footer-links">
-            Privacy Policy • Terms • Contact
-          </div>
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }
 
