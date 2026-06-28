@@ -64,7 +64,7 @@ export default function ActivityFeed() {
         <p>Live stream of waitlist and community events</p>
       </div>
 
-      <div className="activity-list">
+      <div className="activity-list" style={{ maxHeight: 420, overflowY: 'auto' }}>
         {activities.length === 0 ? (
           <p style={{ color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>Waiting for system activity...</p>
         ) : (

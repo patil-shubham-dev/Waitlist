@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LockKeyhole, ShieldCheck } from 'lucide-react';
+import { ShieldCheck, LockKeyhole } from 'lucide-react';
 
 const LOCAL_SESSION_KEY = 'lifeos_admin_local_authed';
 
@@ -42,85 +42,41 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div style={{ 
-      height: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      padding: '24px'
-    }}>
-      <form 
-        style={{ 
-          background: 'var(--card)',
-          padding: '40px',
-          borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--border)',
-          width: '100%',
-          maxWidth: '440px',
-          boxShadow: 'var(--shadow)',
-          textAlign: 'center'
-        }} 
-        onSubmit={handleSubmit}
-      >
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-          <div style={{ 
-            width: '64px', 
-            height: '64px', 
-            borderRadius: '16px', 
-            background: 'var(--accent-soft)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--accent)'
-          }}>
-            <ShieldCheck size={32} />
-          </div>
+    <div className="login-page">
+      <form className="login-card" onSubmit={handleSubmit}>
+        <div className="login-icon-wrap">
+          <ShieldCheck size={34} />
         </div>
 
-        <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.04em', marginBottom: '8px' }}>
-          Admin Login
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '32px' }}>
-          Secure access to the LifeOS Waitlist control panel
-        </p>
+        <h1 className="login-title">Admin Access</h1>
+        <p className="login-sub">LifeOS Waitlist Control Panel</p>
 
-        <div style={{ textAlign: 'left', marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            Administrator Password
-          </label>
-          <div style={{ position: 'relative' }}>
-            <LockKeyhole size={18} style={{ 
-              position: 'absolute', 
-              left: '12px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              color: 'var(--text-faint)' 
-            }} />
+        <div className="login-field">
+          <label className="login-label">Administrator Password</label>
+          <div className="login-input-wrap">
+            <LockKeyhole size={18} className="login-input-icon" />
             <input
+              className="login-input"
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              style={{ paddingLeft: '40px' }}
+              placeholder="Enter password"
               autoFocus
               required
             />
           </div>
         </div>
 
-        <button 
-          className="button-primary" 
-          type="submit" 
-          disabled={status === 'loading'}
-          style={{ width: '100%', justifyContent: 'center', height: '48px' }}
-        >
-          {status === 'loading' ? 'Authenticating...' : 'Open Control surface'}
+        <button className="login-btn" type="submit" disabled={status === 'loading'}>
+          {status === 'loading' ? (
+            <><div className="spinner" /> Authenticating</>
+          ) : (
+            'Open Control Panel'
+          )}
         </button>
 
         {status === 'error' && (
-          <p style={{ color: 'var(--danger)', fontSize: '13px', marginTop: '16px', fontWeight: 500 }}>
-            Incorrect password. Please try again.
-          </p>
+          <p className="login-error">Incorrect password. Please try again.</p>
         )}
       </form>
     </div>

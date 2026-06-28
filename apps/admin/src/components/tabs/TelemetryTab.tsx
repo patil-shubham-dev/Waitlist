@@ -1,12 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
-import { 
-  Users, UserPlus, MessageSquare, Activity, 
-  TrendingUp, Monitor, Smartphone, Clock, 
-  MousePointer2, Globe, ArrowUp, ArrowDown
+import { useEffect, useState } from 'react';
+import {
+  Users, UserPlus, Activity, MousePointer2,
+  TrendingUp, Monitor, Smartphone, Globe
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, 
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer
 } from 'recharts';
 import ActivityFeed from '../ActivityFeed';
@@ -18,17 +17,12 @@ type Stats = {
   totalQuestions: number;
   totalVisits: number;
   conversionRate: number;
-  trends: {
-    waitlist: number;
-    visits: number;
-  }
 };
 
 type Visitor = {
   id: string;
-  visitor_id: string;
-  page_path: string;
-  device_type: 'mobile' | 'desktop';
+  page: string;
+  device: string;
   created_at: string;
 };
 
@@ -40,9 +34,8 @@ export default function TelemetryTab() {
     totalQuestions: 0,
     totalVisits: 0,
     conversionRate: 0,
-    trends: { waitlist: 0, visits: 0 }
   });
-  
+
   const [liveVisitors, setLiveVisitors] = useState<Visitor[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +44,7 @@ export default function TelemetryTab() {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
     const fiveMinsAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
-    
+
     const [
       { count: totalWaitlist },
       { count: new24h },
@@ -69,8 +62,8 @@ export default function TelemetryTab() {
     ]);
 
     const waitlistCount = totalWaitlist || 0;
-    const visitsCount = totalVisits || 1; // avoid div by zero
-    
+    const visitsCount = Math.max(totalVisits || 0, 1);
+
     setStats({
       totalWaitlist: waitlistCount,
       new24h: new24h || 0,
@@ -78,10 +71,6 @@ export default function TelemetryTab() {
       totalQuestions: totalQuestions || 0,
       totalVisits: visitsCount,
       conversionRate: (waitlistCount / visitsCount) * 100,
-      trends: {
-        waitlist: 5.2, // placeholder for actual trend calc logic
-        visits: 12.8
-      }
     });
 
     setLiveVisitors((activeVisitors || []) as Visitor[]);
@@ -92,14 +81,14 @@ export default function TelemetryTab() {
         const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         counts[date] = (counts[date] || 0) + 1;
       });
-      
+
       const sortedData = Object.entries(counts)
         .map(([date, count]) => ({ date, count }))
-        .slice(-10); // Last 10 days
-        
+        .slice(-10);
+
       setChartData(sortedData);
     }
-    
+
     setLoading(false);
   };
 
@@ -109,7 +98,7 @@ export default function TelemetryTab() {
       .on('postgres_changes', { event: '*', schema: 'public' }, () => fetchData())
       .subscribe();
 
-    const interval = setInterval(fetchData, 30000); // 30s refresh for 'active now'
+    const interval = setInterval(fetchData, 30000);
     return () => {
       supabase.removeChannel(channel);
       clearInterval(interval);
@@ -117,61 +106,57 @@ export default function TelemetryTab() {
   }, []);
 
   if (loading) return (
-    <div className="tab-stack animate-pulse">
+    <div className="tab-stack">
       <div className="stats-grid">
-        <div className="panel" style={{ height: '140px' }} />
-        <div className="panel" style={{ height: '140px' }} />
-        <div className="panel" style={{ height: '140px' }} />
-        <div className="panel" style={{ height: '140px' }} />
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="panel" style={{ height: '120px' }} />
+        ))}
       </div>
     </div>
   );
 
   return (
     <div className="tab-stack">
-      <header className="tab-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>System Overview</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Real-time platform performance and user activity</p>
+          <h1>System Overview</h1>
+          <p>Real-time platform performance and user activity</p>
         </div>
         <div className="live-indicator">
           <div className="live-dot" />
-          Live Stream
+          Live
         </div>
-      </header>
+      </div>
 
       <section className="stats-grid">
-        <article className="stat-card">
-          <div className="stat-label"><Users size={16} /> Total Waitlist</div>
+        <div className="stat-card">
+          <div className="stat-label"><Users size={14} /> Total Waitlist</div>
           <div className="stat-value">{stats.totalWaitlist.toLocaleString()}</div>
-          <div className="stat-change up"><ArrowUp size={12} /> {stats.trends.waitlist}%</div>
           <div className="stat-meta">Signups all-time</div>
-        </article>
+        </div>
 
-        <article className="stat-card">
-          <div className="stat-label"><UserPlus size={16} /> 24h Signups</div>
+        <div className="stat-card">
+          <div className="stat-label"><UserPlus size={14} /> 24h Signups</div>
           <div className="stat-value" style={{ color: 'var(--accent)' }}>+{stats.new24h}</div>
           <div className="stat-meta">Newest members</div>
-        </article>
+        </div>
 
-        <article className="stat-card">
-          <div className="stat-label"><MousePointer2 size={16} /> Active Now</div>
+        <div className="stat-card">
+          <div className="stat-label"><MousePointer2 size={14} /> Active Now</div>
           <div className="stat-value">{stats.activeNow}</div>
-          <div className="live-badge">Streaming</div>
           <div className="stat-meta">Current visitors</div>
-        </article>
+        </div>
 
-        <article className="stat-card">
-          <div className="stat-label"><TrendingUp size={16} /> Conv. Rate</div>
+        <div className="stat-card">
+          <div className="stat-label"><TrendingUp size={14} /> Conv. Rate</div>
           <div className="stat-value">{stats.conversionRate.toFixed(1)}%</div>
-          <div className="stat-change up"><ArrowUp size={12} /> 2.1%</div>
           <div className="stat-meta">Visitor to signup</div>
-        </article>
+        </div>
       </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) 1fr', gap: '24px' }}>
-        <div className="stack-vertical">
-          <div className="panel chart-panel">
+      <div className="grid-2col">
+        <div className="stack">
+          <div className="panel">
             <div className="panel-header">
               <div>
                 <h2>Signup Velocity</h2>
@@ -179,35 +164,36 @@ export default function TelemetryTab() {
               </div>
               <Activity size={18} style={{ color: 'var(--accent)' }} />
             </div>
-            <div className="chart-container" style={{ height: '300px', marginTop: '20px' }}>
+            <div className="chart-wrap">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
                     dy={10}
                   />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
                     tick={{ fontSize: 11, fill: 'var(--text-faint)' }}
+                    allowDecimals={false}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      borderRadius: '12px', border: '1px solid var(--border)',
-                      boxShadow: 'var(--shadow-strong)', fontSize: '11px'
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: '10px', border: '1px solid var(--border)',
+                      boxShadow: 'var(--shadow)', fontSize: '12px'
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="var(--accent)" 
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: 'var(--accent)', strokeWidth: 0 }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="var(--accent)"
+                    strokeWidth={2.5}
+                    dot={{ r: 3, fill: 'var(--accent)', strokeWidth: 0 }}
+                    activeDot={{ r: 5, strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -215,14 +201,14 @@ export default function TelemetryTab() {
           </div>
 
           <div className="panel">
-            <header className="panel-header">
+            <div className="panel-header">
               <div>
                 <h2>Traffic Insights</h2>
                 <p>Visitor sources and behavior</p>
               </div>
               <Globe size={18} style={{ color: 'var(--accent)' }} />
-            </header>
-            <div className="data-table-simple" style={{ marginTop: '16px' }}>
+            </div>
+            <div style={{ marginTop: '8px' }}>
               <div className="data-row">
                 <span>Unique Visitors (24h)</span>
                 <strong>{(stats.totalVisits * 0.73).toFixed(0)}</strong>
@@ -239,30 +225,32 @@ export default function TelemetryTab() {
           </div>
         </div>
 
-        <div className="stack-vertical">
+        <div className="stack">
           <ActivityFeed />
 
           <div className="panel">
-            <header className="panel-header">
+            <div className="panel-header">
               <div>
                 <h2>Live Visitors</h2>
                 <p>Current active sessions</p>
               </div>
               <div className="live-indicator"><div className="live-dot" /></div>
-            </header>
-            <div className="visitor-list" style={{ marginTop: '12px' }}>
+            </div>
+            <div className="visitor-list">
               {liveVisitors.length === 0 ? (
-                <div className="empty-state">No active visitors right now</div>
+                <div className="empty-state" style={{ padding: '32px 16px' }}>
+                  <p>No active visitors right now</p>
+                </div>
               ) : (
                 liveVisitors.slice(0, 6).map(v => (
                   <div key={v.id} className="visitor-row">
                     <div className="visitor-info">
-                      <div className="device-icon">
-                        {v.device_type === 'mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
+                      <div className="visitor-device">
+                        {v.device === 'mobile' ? <Smartphone size={14} /> : <Monitor size={14} />}
                       </div>
-                      <div className="visitor-details">
-                        <span className="visitor-id">User_{(v.visitor_id || 'Anon').substring(0, 4)}</span>
-                        <span className="visitor-action">Visited {v.page_path}</span>
+                      <div>
+                        <div className="visitor-name">User_{(v.id || '').substring(0, 4)}</div>
+                        <div className="visitor-page">Visited {v.page}</div>
                       </div>
                     </div>
                     <span className="visitor-time">

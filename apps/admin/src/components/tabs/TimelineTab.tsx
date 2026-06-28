@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase, type TimelineEntry } from '../../lib/supabase';
-import { CheckCircle2, Clock, Calendar, Edit2, Plus, Trash2, ArrowUp, ArrowDown, X } from 'lucide-react';
+import { Plus, Trash2, ArrowUp, ArrowDown, X } from 'lucide-react';
 
 export default function TimelineTab() {
   const [phases, setPhases] = useState<TimelineEntry[]>([]);
@@ -12,14 +12,12 @@ export default function TimelineTab() {
       .from('timeline_entries')
       .select('*')
       .order('sort_order', { ascending: true });
-    
+
     setPhases(data || []);
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchPhases();
-  }, []);
+  useEffect(() => { fetchPhases(); }, []);
 
   const handleUpdateStatus = async (id: string, status: 'past' | 'present' | 'future') => {
     await supabase.from('timeline_entries').update({ status }).eq('id', id);
@@ -75,7 +73,7 @@ export default function TimelineTab() {
       supabase.from('timeline_entries').update({ sort_order: target.sort_order }).eq('id', current.id),
       supabase.from('timeline_entries').update({ sort_order: current.sort_order }).eq('id', target.id)
     ]);
-    
+
     fetchPhases();
   };
 
@@ -83,76 +81,84 @@ export default function TimelineTab() {
 
   return (
     <div className="tab-stack">
-      <div className="tab-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>Launch Phases</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Control the public roadmap sync on the landing page</p>
+          <h1>Launch Phases</h1>
+          <p>Control the public roadmap displayed on the landing page</p>
         </div>
-        <button className="button-primary" onClick={handleAddPhase}>
-          <Plus size={18} />
+        <button className="btn btn-primary" onClick={handleAddPhase}>
+          <Plus size={16} />
           New Phase
         </button>
       </div>
 
-      <div className="timeline-admin-stack">
+      <div className="timeline-stack">
         {phases.map((phase, index) => (
-          <div key={phase.id} className={`timeline-phase-card ${phase.status === 'present' ? 'active' : ''}`}>
-            <div className="phase-card-main">
-              <div className="phase-card-header">
+          <div key={phase.id} className={`phase-card${phase.status === 'present' ? ' active' : ''}`}>
+            <div className="phase-body">
+              <div className="phase-top">
                 {editingId === phase.id ? (
-                  <div className="edit-form">
-                    <input 
+                  <div className="edit-inline">
+                    <input
                       autoFocus
-                      defaultValue={phase.title} 
+                      defaultValue={phase.title}
                       onBlur={(e) => handleEditPhase(phase.id, { title: e.target.value })}
                       onKeyDown={(e) => e.key === 'Enter' && handleEditPhase(phase.id, { title: e.currentTarget.value })}
-                      placeholder="Title"
+                      placeholder="Phase title"
                     />
-                    <textarea 
-                      defaultValue={phase.description || ''} 
+                    <textarea
+                      defaultValue={phase.description || ''}
                       onBlur={(e) => handleEditPhase(phase.id, { description: e.target.value })}
-                      placeholder="Description"
+                      placeholder="Phase description"
                       rows={2}
                     />
                   </div>
                 ) : (
-                  <div className="view-mode" onClick={() => setEditingId(phase.id)}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h3>{phase.title}</h3>
-                      {phase.status === 'present' && <span className="status-badge-mini">Active</span>}
+                  <div className="phase-title-area" onClick={() => setEditingId(phase.id)} style={{ cursor: 'pointer' }}>
+                    <div className="phase-title">
+                      {phase.title}
+                      {phase.status === 'present' && <span className="phase-active-badge">Active</span>}
                     </div>
-                    <p>{phase.description}</p>
+                    <div className="phase-desc">{phase.description}</div>
                   </div>
                 )}
 
-                <div className="phase-actions">
-                  <select 
-                    className="status-select-admin"
-                    value={phase.status} 
+                <div className="phase-controls">
+                  <select
+                    className="phase-select"
+                    value={phase.status}
                     onChange={(e) => handleUpdateStatus(phase.id, e.target.value as any)}
                   >
                     <option value="past">Completed</option>
                     <option value="present">In Progress</option>
                     <option value="future">Upcoming</option>
                   </select>
-                  
-                  <div className="order-actions">
-                    <button disabled={index === 0} onClick={() => handleMove(index, 'up')}><ArrowUp size={14} /></button>
-                    <button disabled={index === phases.length - 1} onClick={() => handleMove(index, 'down')}><ArrowDown size={14} /></button>
+
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button className="phase-move-btn" disabled={index === 0} onClick={() => handleMove(index, 'up')}>
+                      <ArrowUp size={13} />
+                    </button>
+                    <button className="phase-move-btn" disabled={index === phases.length - 1} onClick={() => handleMove(index, 'down')}>
+                      <ArrowDown size={13} />
+                    </button>
                   </div>
 
-                  <button className="delete-phase-btn" onClick={() => handleDeletePhase(phase.id)}><Trash2 size={16} /></button>
+                  <button className="phase-delete" onClick={() => handleDeletePhase(phase.id)}>
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
 
-              <div className="phase-items-list">
+              <div className="phase-features">
                 {phase.items?.map((item, idx) => (
-                  <div key={idx} className="phase-item-chip">
+                  <div key={idx} className="feature-chip">
                     <span>{item}</span>
-                    <button onClick={() => handleRemoveFeature(phase.id, phase.items!, idx)}><X size={10} /></button>
+                    <button onClick={() => handleRemoveFeature(phase.id, phase.items!, idx)}>
+                      <X size={10} />
+                    </button>
                   </div>
                 ))}
-                <button className="add-item-btn" onClick={() => handleAddFeature(phase.id, phase.items)}>
+                <button className="feature-add" onClick={() => handleAddFeature(phase.id, phase.items)}>
                   <Plus size={12} /> Add Feature
                 </button>
               </div>
@@ -160,33 +166,6 @@ export default function TimelineTab() {
           </div>
         ))}
       </div>
-
-      <style>{`
-        .timeline-admin-stack { display: flex; flex-direction: column; gap: 16px; margin-top: 24px; }
-        .timeline-phase-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
-        .timeline-phase-card.active { border-left: 4px solid var(--accent); }
-        .phase-card-main { padding: 20px; }
-        .phase-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 16px; }
-        .edit-form { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .edit-form input { font-size: 18px; font-weight: 700; border: none; border-bottom: 1px dashed var(--accent); padding: 0; background: none; outline: none; }
-        .edit-form textarea { font-size: 14px; border: none; color: var(--text-secondary); background: none; resize: none; outline: none; padding: 0; }
-        .view-mode { flex: 1; cursor: pointer; }
-        .view-mode h3 { font-size: 18px; font-weight: 700; color: var(--text); }
-        .view-mode p { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
-        .phase-actions { display: flex; align-items: center; gap: 12px; }
-        .status-select-admin { background: var(--page); border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600; outline: none; cursor: pointer; }
-        .order-actions { display: flex; gap: 4px; }
-        .order-actions button { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--text-faint); background: #fff; cursor: pointer; }
-        .order-actions button:disabled { opacity: 0.3; cursor: not-allowed; }
-        .delete-phase-btn { color: #f43f5e; opacity: 0.5; cursor: pointer; transition: opacity 0.2s; }
-        .delete-phase-btn:hover { opacity: 1; }
-        .phase-items-list { display: flex; flex-wrap: wrap; gap: 8px; }
-        .phase-item-chip { display: flex; align-items: center; gap: 6px; background: var(--page); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; font-size: 13px; color: var(--text-secondary); }
-        .phase-item-chip button { background: none; border: none; color: var(--text-faint); cursor: pointer; display: grid; place-items: center; }
-        .phase-item-chip button:hover { color: #f43f5e; }
-        .add-item-btn { border: 1px dashed var(--accent); color: var(--accent); background: none; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .status-badge-mini { background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
-      `}</style>
     </div>
   );
 }

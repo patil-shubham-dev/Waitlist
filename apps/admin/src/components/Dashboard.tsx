@@ -5,7 +5,6 @@ import TelemetryTab from './tabs/TelemetryTab';
 import AuditTab from './tabs/AuditTab';
 import TimelineTab from './tabs/TimelineTab';
 import WaitlistTab from './tabs/WaitlistTab';
-import { Users } from 'lucide-react';
 
 export default function Dashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -17,21 +16,19 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
 
       <main className="admin-main">
         {activeTab === 'dashboard' && <TelemetryTab />}
-        
         {activeTab === 'launch' && <TimelineTab />}
-
         {activeTab === 'questions' && (
           <div className="tab-stack">
-            <div className="tab-header">
-              <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>Moderation</h1>
-              <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Review and respond to community questions</p>
+            <div className="page-header">
+              <div>
+                <h1>Moderation</h1>
+                <p>Review and respond to community questions &amp; feedback</p>
+              </div>
             </div>
             <QuestionsTab onSelect={setSelectedId} selectedId={selectedId} />
           </div>
         )}
-
         {activeTab === 'users' && <WaitlistTab />}
-
         {activeTab === 'security' && <AuditTab />}
       </main>
     </div>

@@ -5,6 +5,9 @@ import {
   ChevronLeft, ChevronRight, Menu, X
 } from 'lucide-react';
 
+const base = import.meta.env.BASE_URL || '/';
+const asset = (p: string) => `${base}${p.startsWith('/') ? p.slice(1) : p}`;
+
 export type Tab = 'dashboard' | 'questions' | 'users' | 'security' | 'launch';
 
 const ITEMS: Array<{ id: Tab; label: string; icon: any }> = [
@@ -40,34 +43,33 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile Top Header */}
-      <header className="mobile-admin-header">
+      <header className="mobile-header">
         <div className="sidebar-brand">
-          <img src="/assets/logo-mark.jpg" alt="L" style={{ borderRadius: '8px' }} />
+          <img src={asset('assets/logo-mark.jpg')} alt="L" />
           <strong>LifeOS</strong>
         </div>
-        <button className="mobile-toggle" onClick={() => setIsMobileOpen(true)}>
+        <button className="mobile-toggle" onClick={() => setIsMobileOpen(true)} aria-label="Open menu">
           <Menu size={24} />
         </button>
       </header>
 
-      {/* Mobile Overlay */}
-      {isMobileOpen && <div className="mobile-sidebar-overlay" onClick={() => setIsMobileOpen(false)} />}
+      {isMobileOpen && <div className="mobile-overlay" onClick={() => setIsMobileOpen(false)} />}
 
       <aside className={`sidebar-shell${collapsed ? ' collapsed' : ''}${isMobileOpen ? ' mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <img src="/assets/logo-mark.jpg" alt="L" style={{ borderRadius: '8px' }} />
+            <img src={asset('assets/logo-mark.jpg')} alt="L" />
             {!collapsed && <strong>LifeOS</strong>}
           </div>
-          <div className="sidebar-header-actions">
-            <button className="mobile-close" onClick={() => setIsMobileOpen(false)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button className="mobile-close" onClick={() => setIsMobileOpen(false)} aria-label="Close menu">
               <X size={20} />
             </button>
-            <button 
-              className="sidebar-toggle desktop-only" 
+            <button
+              className="sidebar-toggle-btn desktop-only"
               onClick={() => setCollapsed(!collapsed)}
-              title={collapsed ? "Expand" : "Collapse"}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </button>
@@ -92,11 +94,7 @@ export default function Sidebar({
         </nav>
 
         <div className="sidebar-footer">
-          <button 
-            className="sidebar-link logout-btn" 
-            onClick={onLogout} 
-            title={collapsed ? "Sign out" : undefined}
-          >
+          <button className="sidebar-link" onClick={onLogout} title={collapsed ? 'Sign out' : undefined}>
             <LogOut size={18} />
             {!collapsed && <span>Sign out</span>}
           </button>

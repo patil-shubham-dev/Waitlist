@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Download, Search, Trash2, XCircle, MoreVertical } from 'lucide-react';
+import { Search, Download, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { adminGet, adminPost, type WaitlistRecord } from '../../lib/adminApi';
 
 export default function WaitlistTab() {
@@ -61,92 +61,90 @@ export default function WaitlistTab() {
 
   return (
     <div className="tab-stack">
-      <div className="tab-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="page-header">
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, letterSpacing: '-0.04em' }}>Waitlist</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Review and manage early access signups</p>
+          <h1>Waitlist</h1>
+          <p>Review and manage early access signups</p>
         </div>
-        <button className="button-primary" onClick={exportCsv}>
-          <Download size={18} />
+        <button className="btn btn-primary" onClick={exportCsv}>
+          <Download size={16} />
           Export CSV
         </button>
       </div>
 
       <div className="panel">
-        <div style={{ marginBottom: '24px', display: 'flex', gap: '16px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)' }} />
+        <div style={{ marginBottom: '20px', display: 'flex', gap: '12px' }}>
+          <div className="search-wrap">
+            <Search size={16} className="search-icon" />
             <input
+              className="search-input"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search signups..."
-              style={{ paddingLeft: '40px' }}
+              placeholder="Search by name, email, or role..."
             />
           </div>
+          <span className="stat-label" style={{ alignSelf: 'center', flexShrink: 0 }}>
+            {filtered.length} signup{filtered.length !== 1 ? 's' : ''}
+          </span>
         </div>
 
-        {error && <p style={{ color: 'var(--danger)', marginBottom: '16px' }}>{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', marginBottom: '16px', fontSize: '13px' }}>{error}</p>}
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="table-scroll">
+          <table className="data-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>User</th>
-                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Role</th>
-                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Status</th>
-                <th style={{ textAlign: 'left', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Joined</th>
-                <th style={{ textAlign: 'right', padding: '12px', fontSize: '12px', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase' }}>Actions</th>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Joined</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '16px 12px' }}>
+                <tr key={item.id}>
+                  <td>
                     <div style={{ fontWeight: 600 }}>{item.name}</div>
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{item.email}</div>
                   </td>
-                  <td style={{ padding: '16px 12px', fontSize: '14px' }}>{item.role || 'Other'}</td>
-                  <td style={{ padding: '16px 12px' }}>
-                    <span style={{ 
-                      display: 'inline-flex', 
-                      alignItems: 'center', 
-                      gap: '4px', 
-                      fontSize: '12px', 
-                      fontWeight: 600,
-                      color: item.approved ? 'var(--success)' : 'var(--text-faint)',
-                      background: item.approved ? 'rgba(22, 121, 75, 0.08)' : 'var(--page)',
-                      padding: '4px 8px',
-                      borderRadius: '6px'
-                    }}>
-                      {item.approved ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                  <td style={{ fontSize: '13px' }}>{item.role || '—'}</td>
+                  <td>
+                    <span className={`status-badge ${item.approved ? 'approved' : 'pending'}`}>
+                      {item.approved ? <CheckCircle2 size={11} /> : <XCircle size={11} />}
                       {item.approved ? 'Approved' : 'Pending'}
                     </span>
                   </td>
-                  <td style={{ padding: '16px 12px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {new Date(item.created_at).toLocaleDateString()}
                   </td>
-                  <td style={{ padding: '16px 12px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                      <button 
-                        className="sidebar-toggle" 
-                        disabled={busyId === item.id} 
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                      <button
+                        className="btn btn-sm"
+                        disabled={busyId === item.id}
                         onClick={() => toggleApproval(item)}
-                        style={{ border: '1px solid var(--border)', fontSize: '12px', padding: '4px 12px' }}
                       >
                         {item.approved ? 'Revoke' : 'Approve'}
                       </button>
-                      <button 
-                        className="sidebar-toggle" 
-                        disabled={busyId === item.id} 
+                      <button
+                        className="btn btn-sm btn-danger"
+                        disabled={busyId === item.id}
                         onClick={() => removeEntry(item.id)}
-                        style={{ color: 'var(--danger)', border: '1px solid var(--border)' }}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && !error && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-faint)' }}>
+                    No signups found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
